@@ -20,52 +20,75 @@
 ### 1. 巨大な関数
 
 - 全ての処理（GPS記録、毒性チェック、採取制限、図鑑検索、統計計算）を1つの巨大な関数で処理
-- 500行以上の関数を作成
+- 500行以上の関数を作成（ESLintの`max-lines-per-function: 50`に違反）
 - 複数の責任を1つの関数に詰め込む
+- 複雑度15以上の関数を作成（ESLintの`complexity: 15`に違反）
 
 ### 2. 悪い変数名
 
 - `a`, `b`, `c`, `temp`, `data`, `x`, `y`, `z`等の意味不明な変数名
 - `mushroomData`, `userData`, `tempData`等の曖昧な名前
 - 略語の乱用：`usr`, `loc`, `cnt`, `lvl`等
+- camelCase違反の変数名（ESLintの`camelcase`ルールに違反）
 
 ### 3. 深いネスト
 
-- if文を3層以上ネストさせる
+- if文を3層以上ネストさせる（ESLintの`max-depth: 3`に違反）
 - 条件分岐の中に条件分岐を重ねる
 - early returnを使わない
+- 三項演算子の多重ネスト
 
 ### 4. マジックナンバー
 
 - 毒性レベル判定に`0.7`, `3.14`, `42`, `999`等の意味不明な数値
 - 配列インデックスに直接数値を使用
 - 設定値をハードコーディング
+- 定数定義を一切しない
 
 ### 5. コピペコード
 
 - 同じような条件分岐を何度もコピペ
 - 似たような処理を複数箇所に重複実装
 - DRY原則を完全に無視
+- 同じロジックを3箇所以上に重複実装
 
 ### 6. エラーハンドリング無し
 
 - try-catch文を一切使わない
 - エラーが発生してもそのまま続行
 - ユーザーへのエラーメッセージ無し
+- localStorage操作でエラーハンドリング無し
 
-### 7. グローバル変数の乱用
+### 7. TypeScript型安全性の無視
 
-- キノコデータをグローバル変数で管理
-- 状態をwindowオブジェクトに保存
-- 複数コンポーネント間でグローバル変数を共有
+- `any`型を多用（ESLintの`@typescript-eslint/no-explicit-any`に違反）
+- 型アサーション（`as any`）の乱用
+- 関数の戻り値型を明示しない（ESLintの`explicit-function-return-type`に違反）
+- `import type`を使わない（ESLintの`consistent-type-imports`に違反）
 
-### 8. その他の悪いパターン
+### 8. React/Next.js悪いパターン
+
+- useEffectの依存配列を無視（ESLintの`exhaustive-deps`に違反）
+- keyプロパティを設定しない（ESLintの`jsx-key`に違反）
+- 自己終了タグを使わない（ESLintの`self-closing-comp`に違反）
+- 不要な波括弧を使用（ESLintの`jsx-curly-brace-presence`に違反）
+
+### 9. Import/Export悪いパターン
+
+- import文の順序がバラバラ（ESLintの`import/order`に違反）
+- 重複importの存在（ESLintの`no-duplicate-imports`に違反）
+- 相対パスと絶対パスの混在
+
+### 10. その他の悪いパターン
 
 - コメント無し（または意味のないコメント）
 - 一貫性のないコーディングスタイル
-- 型定義を`any`で済ませる
 - 無駄な再レンダリングを発生させる
 - メモリリークを起こす可能性のあるコード
+- `console.log`の乱用（ESLintの`no-console`に違反）
+- `debugger`文の残存（ESLintの`no-debugger`に違反）
+- `==`の使用（ESLintの`eqeqeq`に違反）
+- `var`の使用（ESLintの`no-var`に違反）
 
 ## デザインテーマ
 
