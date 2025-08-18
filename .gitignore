@@ -151,3 +151,6 @@ Thumbs.db
 
 # Prettier cache
 .prettiercache
+
+# Claude Code documentation
+CLAUDE.md
