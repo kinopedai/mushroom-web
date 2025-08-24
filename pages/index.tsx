@@ -1,2158 +1,1565 @@
-import React, { useState, useEffect } from "react";
-import {
-  Chrome as Mushroom,
-  Search,
-  BarChart3,
-  MapPin,
-  Calendar,
-  Hash,
-  Plus,
-  List,
-  Map,
-  BookOpen,
-  Book,
-  Menu,
-  X,
-} from "lucide-react";
-import Head from "next/head";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { Search, MapPin, Book, Plus, Menu, X, Navigation, Trash2, Eye, EyeOff } from 'lucide-react';
+import { useRouter } from 'next/router';
+import 'leaflet/dist/leaflet.css';
 
-// TypeScript型定義
-interface MushroomData {
+// 重複した型定義（悪いパターン）
+interface MushroomRecord {
+  id: string;
   name: string;
-  toxicity: number;
-  season: string;
-  limit: number;
-  category?: string;
+  location: string;
+  date: string;
+  count: number;
+  toxicityLevel: number;
+  memo: string;
+  coordinates?: { lat: number; lng: number };
+  timestamp: number;
 }
 
 interface RecordData {
-  id: number;
+  id: string;
   name: string;
-  count: number;
-  season: string;
   location: string;
-  gps: { lat: number; lng: number };
-  toxicity: number;
-  status: string;
-  timestamp: Date;
+  date: string;
+  count: number;
+  toxicityLevel: number;
+  memo: string;
+  coordinates?: { lat: number; lng: number };
+  timestamp: number;
 }
 
-// グローバル変数でキノコデータを管理（悪い書き方）
-let globalMushroomData: RecordData[] = [];
-let a = 0; // カウンター
-let temp = "";
-let gpsData = { lat: 0, lng: 0 };
-let mushroomDatabase: MushroomData[] = [
-  // あいうえお順
-  {
-    name: "アカハツ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 18,
-    category: "主要",
-  },
-  {
-    name: "アカヤマドリ",
-    toxicity: 0.0,
-    season: "夏",
-    limit: 12,
-    category: "主要",
-  },
-  {
-    name: "アミガサタケ",
-    toxicity: 0.1,
-    season: "春",
-    limit: 15,
-    category: "主要",
-  },
-  {
-    name: "アミハナイグチ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 15,
-    category: "主要",
-  },
-  {
-    name: "アンズタケ",
-    toxicity: 0.0,
-    season: "夏",
-    limit: 25,
-    category: "主要",
-  },
-  {
-    name: "アラゲキクラゲ",
-    toxicity: 0.0,
-    season: "通年",
-    limit: 100,
-    category: "主要",
-  },
-  {
-    name: "アワビタケ",
-    toxicity: 0.0,
-    season: "夏",
-    limit: 20,
-    category: "主要",
-  },
-  {
-    name: "イボテングタケ",
-    toxicity: 0.75,
-    season: "夏",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "ウスヒラタケ",
-    toxicity: 0.0,
-    season: "冬",
-    limit: 30,
-    category: "主要",
-  },
-  {
-    name: "ウラベニホテイシメジ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 12,
-    category: "主要",
-  },
-  {
-    name: "エノキタケ",
-    toxicity: 0.0,
-    season: "冬",
-    limit: 100,
-    category: "主要",
-  },
-  {
-    name: "エリンギ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 30,
-    category: "主要",
-  },
-  {
-    name: "オオイチョウタケ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 8,
-    category: "主要",
-  },
-  {
-    name: "オオシロカラカサタケ",
-    toxicity: 0.7,
-    season: "夏",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "カエンタケ",
-    toxicity: 0.98,
-    season: "夏",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "カワラタケ",
-    toxicity: 0.1,
-    season: "通年",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "キクラゲ",
-    toxicity: 0.0,
-    season: "夏",
-    limit: 100,
-    category: "主要",
-  },
-  {
-    name: "クリタケ",
-    toxicity: 0.1,
-    season: "秋",
-    limit: 25,
-    category: "主要",
-  },
-  { name: "コウタケ", toxicity: 0.0, season: "秋", limit: 8, category: "主要" },
-  {
-    name: "コレラタケ",
-    toxicity: 0.85,
-    season: "夏",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "サルノコシカケ",
-    toxicity: 0.1,
-    season: "通年",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "しいたけ",
-    toxicity: 0.0,
-    season: "通年",
-    limit: 100,
-    category: "主要",
-  },
-  {
-    name: "ジコボウ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 25,
-    category: "主要",
-  },
-  {
-    name: "シロタマゴテングタケ",
-    toxicity: 0.95,
-    season: "夏",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "ショウゲンジ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 12,
-    category: "主要",
-  },
-  { name: "スギタケ", toxicity: 0.3, season: "秋", limit: 5, category: "主要" },
-  {
-    name: "スギヒラタケ",
-    toxicity: 0.9,
-    season: "秋",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "ススケヤマドリタケ",
-    toxicity: 0.0,
-    season: "夏",
-    limit: 10,
-    category: "主要",
-  },
-  {
-    name: "タマゴテングタケ",
-    toxicity: 0.9,
-    season: "夏",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "タモギタケ",
-    toxicity: 0.0,
-    season: "春",
-    limit: 25,
-    category: "主要",
-  },
-  {
-    name: "チチタケ",
-    toxicity: 0.0,
-    season: "夏",
-    limit: 20,
-    category: "主要",
-  },
-  {
-    name: "チャーガ",
-    toxicity: 0.1,
-    season: "通年",
-    limit: 2,
-    category: "主要",
-  },
-  {
-    name: "ツキヨタケ",
-    toxicity: 0.75,
-    season: "秋",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "テングタケ",
-    toxicity: 0.7,
-    season: "夏",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "ドクアジロガサ",
-    toxicity: 0.8,
-    season: "秋",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "ドクササコ",
-    toxicity: 0.8,
-    season: "秋",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "ドクツルタケ",
-    toxicity: 0.95,
-    season: "夏",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "ドクベニタケ",
-    toxicity: 0.85,
-    season: "夏",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "ドクヤマドリ",
-    toxicity: 0.8,
-    season: "夏",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "トランペットタケ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 15,
-    category: "主要",
-  },
-  { name: "ナメコ", toxicity: 0.0, season: "秋", limit: 50, category: "主要" },
-  {
-    name: "ナラタケ",
-    toxicity: 0.1,
-    season: "秋",
-    limit: 30,
-    category: "主要",
-  },
-  {
-    name: "ニガクリタケ",
-    toxicity: 0.7,
-    season: "秋",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "ニセクロハツ",
-    toxicity: 0.75,
-    season: "夏",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "ヌメリガサ",
-    toxicity: 0.2,
-    season: "秋",
-    limit: 10,
-    category: "主要",
-  },
-  {
-    name: "ヌメリスギタケ",
-    toxicity: 0.2,
-    season: "秋",
-    limit: 10,
-    category: "主要",
-  },
-  {
-    name: "ハタケシメジ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 20,
-    category: "主要",
-  },
-  {
-    name: "ハツタケ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 20,
-    category: "主要",
-  },
-  {
-    name: "ハナイグチ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 30,
-    category: "主要",
-  },
-  {
-    name: "バライロウラベニイロガワリ",
-    toxicity: 0.7,
-    season: "夏",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "ヒトヨタケ",
-    toxicity: 0.6,
-    season: "夏",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "ヒラタケ",
-    toxicity: 0.0,
-    season: "冬",
-    limit: 40,
-    category: "主要",
-  },
-  {
-    name: "ブナシメジ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 50,
-    category: "主要",
-  },
-  {
-    name: "フクロツルタケ",
-    toxicity: 0.9,
-    season: "夏",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "ベニテングタケ",
-    toxicity: 0.8,
-    season: "夏",
-    limit: 0,
-    category: "主要",
-  },
-  {
-    name: "ポルチーニ",
-    toxicity: 0.0,
-    season: "夏",
-    limit: 8,
-    category: "主要",
-  },
-  {
-    name: "ホンシメジ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 10,
-    category: "主要",
-  },
-  {
-    name: "マイタケ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 20,
-    category: "主要",
-  },
-  { name: "まつたけ", toxicity: 0.0, season: "秋", limit: 5, category: "主要" },
-  {
-    name: "マンネンタケ",
-    toxicity: 0.1,
-    season: "通年",
-    limit: 3,
-    category: "主要",
-  },
-  {
-    name: "ムキタケ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 30,
-    category: "主要",
-  },
-  {
-    name: "ムラサキアブラシメジ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 10,
-    category: "主要",
-  },
-  {
-    name: "ムラサキシメジ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 15,
-    category: "主要",
-  },
-  {
-    name: "ヤマイグチ",
-    toxicity: 0.0,
-    season: "夏",
-    limit: 20,
-    category: "主要",
-  },
-  {
-    name: "ヤマシメジ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 15,
-    category: "主要",
-  },
-  {
-    name: "ヤマドリタケモドキ",
-    toxicity: 0.0,
-    season: "夏",
-    limit: 15,
-    category: "主要",
-  },
-  {
-    name: "ヤマブシタケ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 10,
-    category: "主要",
-  },
+interface DatabaseItem {
+  id: string;
+  name: string;
+  toxicityLevel: number;
+  season: string;
+  limit: string;
+  category: string;
+}
+
+// 重複したデータ定義（悪いパターン）
+const mushroomDatabase = [
+  { id: '1', name: 'シイタケ', toxicityLevel: 0.0, season: '春-秋', limit: '制限なし', category: 'edible' },
+  { id: '2', name: 'マイタケ', toxicityLevel: 0.0, season: '秋', limit: '制限なし', category: 'edible' },
+  { id: '3', name: 'エノキタケ', toxicityLevel: 0.0, season: '冬-春', limit: '制限なし', category: 'edible' },
+  { id: '4', name: 'ベニテングタケ', toxicityLevel: 0.8, season: '夏-秋', limit: '採取禁止', category: 'poisonous' },
+  { id: '5', name: 'ドクツルタケ', toxicityLevel: 0.9, season: '夏-秋', limit: '採取禁止', category: 'poisonous' },
+  { id: '6', name: 'レイシ', toxicityLevel: 0.0, season: '夏-秋', limit: '適量', category: 'medicinal' }
 ];
 
-// カテゴリ別キノコデータ
-let regionalMushrooms: MushroomData[] = [
-  {
-    name: "アイカワタケ",
-    toxicity: 0.0,
-    season: "夏",
-    limit: 5,
-    category: "希少種",
-  },
-  {
-    name: "イワタケ",
-    toxicity: 0.0,
-    season: "通年",
-    limit: 3,
-    category: "希少種",
-  },
-  {
-    name: "ウチワタケ",
-    toxicity: 0.1,
-    season: "夏",
-    limit: 0,
-    category: "希少種",
-  },
-  {
-    name: "エゾハリタケ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 8,
-    category: "希少種",
-  },
-  {
-    name: "オオツガタケ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 5,
-    category: "希少種",
-  },
-  {
-    name: "カラマツベニハナイグチ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 15,
-    category: "希少種",
-  },
-  {
-    name: "キハダタケ",
-    toxicity: 0.0,
-    season: "夏",
-    limit: 10,
-    category: "希少種",
-  },
-  {
-    name: "クロカワ",
-    toxicity: 0.0,
-    season: "春",
-    limit: 8,
-    category: "希少種",
-  },
-  {
-    name: "コガネタケ",
-    toxicity: 0.0,
-    season: "夏",
-    limit: 12,
-    category: "希少種",
-  },
-  {
-    name: "サクラシメジ",
-    toxicity: 0.0,
-    season: "春",
-    limit: 15,
-    category: "希少種",
-  },
-  {
-    name: "シロヌメリイグチ",
-    toxicity: 0.0,
-    season: "夏",
-    limit: 20,
-    category: "希少種",
-  },
-  {
-    name: "タカネオオシロタケ",
-    toxicity: 0.0,
-    season: "夏",
-    limit: 5,
-    category: "希少種",
-  },
-  {
-    name: "ツガタケ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 10,
-    category: "希少種",
-  },
-  {
-    name: "ナガエノスギタケ",
-    toxicity: 0.2,
-    season: "秋",
-    limit: 3,
-    category: "希少種",
-  },
-  {
-    name: "ハナビラタケ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 8,
-    category: "希少種",
-  },
-  {
-    name: "ヒメマツタケ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 12,
-    category: "希少種",
-  },
-  {
-    name: "フサタケ",
-    toxicity: 0.0,
-    season: "夏",
-    limit: 15,
-    category: "希少種",
-  },
-  {
-    name: "ホウキタケ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 20,
-    category: "希少種",
-  },
-  {
-    name: "マスタケ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 10,
-    category: "希少種",
-  },
-  {
-    name: "ヤマトタケ",
-    toxicity: 0.0,
-    season: "夏",
-    limit: 8,
-    category: "希少種",
-  },
+const databaseItems = [
+  { id: '1', name: 'シイタケ', toxicityLevel: 0.0, season: '春-秋', limit: '制限なし', category: 'edible' },
+  { id: '2', name: 'マイタケ', toxicityLevel: 0.0, season: '秋', limit: '制限なし', category: 'edible' },
+  { id: '3', name: 'エノキタケ', toxicityLevel: 0.0, season: '冬-春', limit: '制限なし', category: 'edible' },
+  { id: '4', name: 'ベニテングタケ', toxicityLevel: 0.8, season: '夏-秋', limit: '採取禁止', category: 'poisonous' },
+  { id: '5', name: 'ドクツルタケ', toxicityLevel: 0.9, season: '夏-秋', limit: '採取禁止', category: 'poisonous' },
+  { id: '6', name: 'レイシ', toxicityLevel: 0.0, season: '夏-秋', limit: '適量', category: 'medicinal' }
 ];
 
-let microMushrooms: MushroomData[] = [
-  {
-    name: "アカビョウタケ",
-    toxicity: 0.1,
-    season: "夏",
-    limit: 0,
-    category: "微小",
-  },
-  {
-    name: "イトヒキタケ",
-    toxicity: 0.0,
-    season: "通年",
-    limit: 0,
-    category: "微小",
-  },
-  {
-    name: "ウスキモリノカサ",
-    toxicity: 0.3,
-    season: "夏",
-    limit: 0,
-    category: "微小",
-  },
-  {
-    name: "エダウチホコリタケ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 0,
-    category: "微小",
-  },
-  {
-    name: "オオホコリタケ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 5,
-    category: "微小",
-  },
-  {
-    name: "カビタケ",
-    toxicity: 0.2,
-    season: "通年",
-    limit: 0,
-    category: "微小",
-  },
-  {
-    name: "キイロスッポンタケ",
-    toxicity: 0.1,
-    season: "夏",
-    limit: 0,
-    category: "微小",
-  },
-  { name: "クモタケ", toxicity: 0.1, season: "夏", limit: 0, category: "微小" },
-  {
-    name: "コガネキヌカラカサタケ",
-    toxicity: 0.4,
-    season: "夏",
-    limit: 0,
-    category: "微小",
-  },
-  {
-    name: "サビイロクビオレタケ",
-    toxicity: 0.2,
-    season: "秋",
-    limit: 0,
-    category: "微小",
-  },
-  {
-    name: "シロオニタケ",
-    toxicity: 0.0,
-    season: "夏",
-    limit: 3,
-    category: "微小",
-  },
-  {
-    name: "スジオチバタケ",
-    toxicity: 0.1,
-    season: "秋",
-    limit: 0,
-    category: "微小",
-  },
-  {
-    name: "チャヒラタケ",
-    toxicity: 0.0,
-    season: "通年",
-    limit: 0,
-    category: "微小",
-  },
-  { name: "ツチグリ", toxicity: 0.1, season: "秋", limit: 0, category: "微小" },
-  {
-    name: "ニセショウロ",
-    toxicity: 0.2,
-    season: "夏",
-    limit: 0,
-    category: "微小",
-  },
-  {
-    name: "ハイイロシメジ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 5,
-    category: "微小",
-  },
-  {
-    name: "ヒメカバイロタケ",
-    toxicity: 0.1,
-    season: "夏",
-    limit: 0,
-    category: "微小",
-  },
-  {
-    name: "フクロシトネタケ",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 0,
-    category: "微小",
-  },
-  {
-    name: "ホソツクシタケ",
-    toxicity: 0.1,
-    season: "春",
-    limit: 0,
-    category: "微小",
-  },
-  {
-    name: "ミドリスギタケ",
-    toxicity: 0.2,
-    season: "夏",
-    limit: 0,
-    category: "微小",
-  },
-];
-
-let specializedMushrooms: MushroomData[] = [
-  {
-    name: "アナモルフ菌",
-    toxicity: 0.1,
-    season: "通年",
-    limit: 0,
-    category: "専門",
-  },
-  {
-    name: "イグチ科未同定種",
-    toxicity: 0.3,
-    season: "夏",
-    limit: 0,
-    category: "専門",
-  },
-  {
-    name: "ウラベニガサ属",
-    toxicity: 0.2,
-    season: "秋",
-    limit: 0,
-    category: "専門",
-  },
-  {
-    name: "エントロマ属",
-    toxicity: 0.4,
-    season: "夏",
-    limit: 0,
-    category: "専門",
-  },
-  {
-    name: "オキナタケ属",
-    toxicity: 0.1,
-    season: "秋",
-    limit: 0,
-    category: "専門",
-  },
-  {
-    name: "カラカサタケ属",
-    toxicity: 0.3,
-    season: "夏",
-    limit: 0,
-    category: "専門",
-  },
-  {
-    name: "キシメジ科未分類",
-    toxicity: 0.2,
-    season: "秋",
-    limit: 0,
-    category: "専門",
-  },
-  {
-    name: "クヌギタケ属",
-    toxicity: 0.1,
-    season: "通年",
-    limit: 0,
-    category: "専門",
-  },
-  {
-    name: "コウヤクタケ属",
-    toxicity: 0.1,
-    season: "通年",
-    limit: 0,
-    category: "専門",
-  },
-  {
-    name: "サルノコシカケ科",
-    toxicity: 0.1,
-    season: "通年",
-    limit: 0,
-    category: "専門",
-  },
-  {
-    name: "シロキクラゲ科",
-    toxicity: 0.0,
-    season: "通年",
-    limit: 0,
-    category: "専門",
-  },
-  {
-    name: "スッポンタケ科",
-    toxicity: 0.2,
-    season: "夏",
-    limit: 0,
-    category: "専門",
-  },
-  {
-    name: "テングタケ属未同定",
-    toxicity: 0.8,
-    season: "夏",
-    limit: 0,
-    category: "専門",
-  },
-  {
-    name: "ナヨタケ属",
-    toxicity: 0.3,
-    season: "秋",
-    limit: 0,
-    category: "専門",
-  },
-  {
-    name: "ハラタケ科未分類",
-    toxicity: 0.2,
-    season: "夏",
-    limit: 0,
-    category: "専門",
-  },
-  {
-    name: "ヒダナシタケ目",
-    toxicity: 0.1,
-    season: "通年",
-    limit: 0,
-    category: "専門",
-  },
-  {
-    name: "フウセンタケ属",
-    toxicity: 0.5,
-    season: "秋",
-    limit: 0,
-    category: "専門",
-  },
-  {
-    name: "ベニタケ属未同定",
-    toxicity: 0.4,
-    season: "夏",
-    limit: 0,
-    category: "専門",
-  },
-  {
-    name: "モエギタケ属",
-    toxicity: 0.3,
-    season: "秋",
-    limit: 0,
-    category: "専門",
-  },
-  {
-    name: "ヤマドリタケ属",
-    toxicity: 0.0,
-    season: "夏",
-    limit: 0,
-    category: "専門",
-  },
-];
-
-let introducedMushrooms: MushroomData[] = [
-  {
-    name: "アガリクス",
-    toxicity: 0.0,
-    season: "通年",
-    limit: 20,
-    category: "帰化",
-  },
-  {
-    name: "イタリアンオイスター",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 30,
-    category: "帰化",
-  },
-  {
-    name: "ウッドイヤー",
-    toxicity: 0.0,
-    season: "通年",
-    limit: 50,
-    category: "帰化",
-  },
-  {
-    name: "エルムオイスター",
-    toxicity: 0.0,
-    season: "冬",
-    limit: 25,
-    category: "帰化",
-  },
-  {
-    name: "オレンジオイスター",
-    toxicity: 0.0,
-    season: "秋",
-    limit: 20,
-    category: "帰化",
-  },
-  {
-    name: "キングオイスター",
-    toxicity: 0.0,
-    season: "通年",
-    limit: 30,
-    category: "帰化",
-  },
-  {
-    name: "クリミニ",
-    toxicity: 0.0,
-    season: "通年",
-    limit: 50,
-    category: "帰化",
-  },
-  {
-    name: "シメジ（ブナシメジ）",
-    toxicity: 0.0,
-    season: "通年",
-    limit: 40,
-    category: "帰化",
-  },
-  {
-    name: "ポートベロ",
-    toxicity: 0.0,
-    season: "通年",
-    limit: 15,
-    category: "帰化",
-  },
-  {
-    name: "マッシュルーム",
-    toxicity: 0.0,
-    season: "通年",
-    limit: 100,
-    category: "帰化",
-  },
-];
-
-function HomePage() {
-  const [currentPage, setCurrentPage] = useState("home");
-  const [mushroomCategory, setMushroomCategory] = useState("main");
-  const [databaseTab, setDatabaseTab] = useState("encyclopedia"); // 'encyclopedia' or 'search'
-  const [b, setB] = useState("");
-  const [c, setC] = useState(0);
-  const [d, setD] = useState("");
-  const [e, setE] = useState("");
-  const [f, setF] = useState(false);
-  const [g, setG] = useState("");
-  const [h, setH] = useState<MushroomData[]>([]); // 検索結果用
-  const [i, setI] = useState(""); // 検索キーワード用
-  const [currentGPS, setCurrentGPS] = useState({
-    lat: 35.681236,
-    lng: 139.767125,
+export default function MushroomTracker() {
+  // 大量のuseStateが連続定義（悪いパターン）
+  const [activeTab, setActiveTab] = useState('record');
+  const [records, setRecords] = useState<MushroomRecord[]>([]);
+  const [formData, setFormData] = useState({
+    name: '',
+    location: '',
+    date: '',
+    count: 1,
+    toxicityLevel: 0,
+    memo: ''
   });
+  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<DatabaseItem[]>([]);
+  const [locationSearchQuery, setLocationSearchQuery] = useState('');
+  const [locationSearchResults, setLocationSearchResults] = useState<MushroomRecord[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [databaseTab, setDatabaseTab] = useState('mushroom');
+  const [showCoordinates, setShowCoordinates] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [map, setMap] = useState<any>(null);
+  const [markers, setMarkers] = useState<any[]>([]);
+  const [isSelectingLocation, setIsSelectingLocation] = useState(false);
+  const [tempMarker, setTempMarker] = useState<any>(null);
+  const [showLocationMap, setShowLocationMap] = useState(false);
+  const [locationSelectionMap, setLocationSelectionMap] = useState<any>(null);
+  const [expandedLocationId, setExpandedLocationId] = useState<string | null>(null);
+  const [clickedLocationId, setClickedLocationId] = useState<string | null>(null);
+  const router = useRouter();
+  const openLocationPicker = async () => {
+    // Leaflet を未ロードならロード（効果側の初期化が動くようにだけ整える）
+    if (!isMapLoaded) {
+      try {
+        if (typeof window !== 'undefined') {
+          await import('leaflet');
+          setIsMapLoaded(true);
+        }
+      } catch {}
+    }
 
-  // 現在選択されているカテゴリのキノコデータを取得する関数
-  const getCurrentMushroomData = () => {
-    switch (mushroomCategory) {
-      case "main":
-        return mushroomDatabase;
-      case "regional":
-        return regionalMushrooms;
-      case "micro":
-        return microMushrooms;
-      case "specialized":
-        return specializedMushrooms;
-      case "introduced":
-        return introducedMushrooms;
-      default:
-        return mushroomDatabase;
+    // 前回のレイヤや一時マーカーを念のため掃除（常にピンは1つ）
+    try { selectionLayerRef.current?.clearLayers?.(); } catch {}
+    try { tempMarker?.remove?.(); } catch {}
+
+    setShowLocationMap(true);
+  };
+  const closeLocationPicker = () => {
+    setShowLocationMap(false);
+    try { locationSelectionMap?.off?.(); } catch {}
+    try { locationSelectionMap?.remove?.(); } catch {}
+    try { tempMarker?.remove?.(); } catch {}
+    setLocationSelectionMap(null);
+  };
+  // クリックで置くマーカーを常に1個に保つためのLayerGroup参照
+  const selectionLayerRef = useRef<any>(null);
+
+  // 不適切なuseEffect（空の依存配列）
+  useEffect(() => {
+    const savedRecords = localStorage.getItem('mushroomRecords');
+    if (savedRecords) {
+      const parsedRecords = JSON.parse(savedRecords);
+      setRecords(parsedRecords);
+    }
+    // formDataの初期化も同じuseEffect内で行う（悪いパターン）
+    setFormData({
+      name: '',
+      location: '',
+      date: new Date().toISOString().split('T')[0],
+      count: 1,
+      toxicityLevel: 0,
+      memo: ''
+    });
+  }, []); // 依存配列が不適切
+
+  // Googleマップの初期化
+  useEffect(() => {
+    const initLeaflet = async () => {
+      if (typeof window === 'undefined') return;
+      try {
+        await import('leaflet');
+        setIsMapLoaded(true);
+      } catch (error) {
+        console.error('Leaflet loading failed:', error);
+        setIsMapLoaded(false);
+      }
+    };
+    if (activeTab === 'map') {
+      initLeaflet();
+    }
+  }, [activeTab]);
+
+  // 位置選択用マップの初期化
+  useEffect(() => {
+    const initLocationSelectionMap = async () => {
+      if (!showLocationMap || !isMapLoaded) return;
+
+      const mapElement = document.getElementById('location-selection-map');
+      if (!mapElement) return;
+
+      // 位置選択用マップの初期化
+      const L = (await import('leaflet')).default;
+      // 既に同じコンテナに初期化済みなら何もしない
+      if (locationSelectionMap) return;
+
+      const newMap = L.map(mapElement).setView([35.6762, 139.6503], 12); // 東京
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(newMap);
+
+      // クリック用マーカーを管理するLayerGroup
+      selectionLayerRef.current = L.layerGroup().addTo(newMap);
+
+      setLocationSelectionMap(newMap);
+
+      // 既存の座標がある場合はマーカーを表示
+      if (coordinates) {
+        selectionLayerRef.current.clearLayers();
+        const marker = L.circleMarker([coordinates.lat, coordinates.lng], {
+          radius: 8,
+          fillColor: '#2196F3',
+          fillOpacity: 1,
+          color: '#ffffff',
+          weight: 2
+        }).addTo(selectionLayerRef.current);
+        setTempMarker(marker);
+        newMap.whenReady(() => {
+          try { newMap.invalidateSize(true); } catch {}
+          try { newMap.setView([coordinates.lat, coordinates.lng], 15); } catch {}
+        });
+      }
+
+      // 地図クリックイベント
+      newMap.on('click', (event: any) => {
+        const lat = event.latlng?.lat;
+        const lng = event.latlng?.lng;
+
+        if (lat && lng) {
+          // 既存の一時マーカーを削除（LayerGroupをクリアして常に1個）
+          if (selectionLayerRef.current) {
+            selectionLayerRef.current.clearLayers();
+          }
+          if (tempMarker) {
+            tempMarker.remove();
+          }
+
+          // 新しいマーカーを作成
+          const marker = L.circleMarker([lat, lng], {
+            radius: 8,
+            fillColor: '#2196F3',
+            fillOpacity: 1,
+            color: '#ffffff',
+            weight: 2
+          }).addTo(selectionLayerRef.current || newMap);
+
+          setTempMarker(marker);
+          setCoordinates({ lat, lng });
+        }
+      });
+    };
+
+    initLocationSelectionMap();
+    // アンマウント時や表示切替時に確実に破棄
+    return () => {
+      if (locationSelectionMap) {
+        locationSelectionMap.off();
+        locationSelectionMap.remove();
+        setLocationSelectionMap(null);
+      }
+      if (selectionLayerRef.current) {
+        selectionLayerRef.current.clearLayers();
+        selectionLayerRef.current = null;
+      }
+    };
+  }, [showLocationMap, isMapLoaded]);
+
+  // showLocationMapが変更されたときにマップを初期化
+  useEffect(() => {
+    if (showLocationMap && !isMapLoaded) {
+      (async () => {
+        try {
+          if (typeof window === 'undefined') return;
+          await import('leaflet');
+          setIsMapLoaded(true);
+        } catch (error) {
+          console.error('Leaflet loading failed:', error);
+          setIsMapLoaded(false);
+        }
+      })();
+    }
+  }, [showLocationMap]);
+
+  // 位置選択マーカー更新（座標変更時にのみ実行）
+  useEffect(() => {
+    (async () => {
+      if (!showLocationMap || !isMapLoaded) return;
+      const mapInst = locationSelectionMap as any;
+      // マップが未初期化/破棄済みなら何もしない
+      if (!mapInst || !mapInst._leaflet_id) return;
+
+      const L = (await import('leaflet')).default;
+
+      // LayerGroup を確保
+      if (!selectionLayerRef.current) {
+        selectionLayerRef.current = L.layerGroup().addTo(mapInst);
+      }
+      selectionLayerRef.current.clearLayers();
+      if (tempMarker && typeof tempMarker.remove === 'function') {
+        tempMarker.remove();
+      }
+
+      if (!coordinates) return;
+
+      const marker = L.circleMarker([coordinates.lat, coordinates.lng], {
+        radius: 8, fillColor: '#2196F3', fillOpacity: 1, color: '#ffffff', weight: 2
+      }).addTo(selectionLayerRef.current);
+      setTempMarker(marker);
+
+      // setView は map の DOM/サイズが安定してから実行
+      mapInst.whenReady(() => {
+        try { mapInst.invalidateSize(true); } catch {}
+        try { mapInst.setView([coordinates.lat, coordinates.lng], 15); } catch {}
+      });
+    })();
+  }, [coordinates, showLocationMap, isMapLoaded, locationSelectionMap]);
+
+  // マップとマーカーの更新
+  useEffect(() => {
+    if (!isMapLoaded || activeTab !== 'map') return;
+
+    const mapElement = document.getElementById('google-map');
+    if (!mapElement) return;
+
+    // マップの初期化
+    (async () => {
+      const L = (await import('leaflet')).default;
+      // 既存マップがあれば破棄
+      if (map) {
+        map.off();
+        map.remove();
+      }
+      const newMap = L.map(mapElement).setView([35.6762, 139.6503], 10); // 東京
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(newMap);
+
+      // 初期化直後はコンテナの描画がまだ安定していないことがあるためサイズ再計算
+      newMap.whenReady(() => {
+        try { newMap.invalidateSize(true); } catch {}
+      });
+
+      setMap(newMap);
+
+      // 既存のマーカーをクリア
+      markers.forEach(marker => marker.remove());
+      const newMarkers: any[] = [];
+
+      // 採取記録からマーカーを作成
+      const locationGroups: { [key: string]: MushroomRecord[] } = {};
+      records.forEach(record => {
+        if (!locationGroups[record.location]) {
+          locationGroups[record.location] = [];
+        }
+        locationGroups[record.location].push(record);
+      });
+
+      Object.entries(locationGroups).forEach(([location, locationRecords]) => {
+        const hasDangerous = locationRecords.some(r => r.toxicityLevel > 0.2);
+
+        // GPS座標がある場合はそれを使用、なければデフォルト位置
+        const firstRecordWithCoords = locationRecords.find(r => r.coordinates);
+        const position = firstRecordWithCoords?.coordinates
+          ? [firstRecordWithCoords.coordinates.lat, firstRecordWithCoords.coordinates.lng]
+          : [35.6762 + (Math.random() - 0.5) * 0.1, 139.6503 + (Math.random() - 0.5) * 0.1];
+
+        const marker = L.circleMarker(position as [number, number], {
+          radius: 10,
+          color: '#ffffff',
+          weight: 2,
+          fillColor: hasDangerous ? '#dc3545' : '#28a745',
+          fillOpacity: 1,
+          title: `${location} (${locationRecords.length}件)`
+        })
+          .addTo(newMap)
+          .bindPopup(`
+          <div style="padding: 8px;">
+            <h4 style="margin: 0 0 8px 0; color: #2d5016;">${location}</h4>
+            <p style="margin: 0; font-size: 14px;">記録数: ${locationRecords.length}件</p>
+            <p style="margin: 4px 0 0 0; font-size: 12px; color: ${hasDangerous ? '#dc3545' : '#28a745'};">
+              ${hasDangerous ? '⚠️ 注意が必要' : '✅ 安全'}
+            </p>
+          </div>
+        `);
+
+        newMarkers.push(marker);
+      });
+
+      setMarkers(newMarkers);
+    })();
+    // タブ離脱・再描画時の確実な破棄
+    return () => {
+      if (map) {
+        map.off();
+        map.remove();
+      }
+    };
+  }, [isMapLoaded, records, activeTab]);
+
+  // リストクリックでマップ上のピンに移動
+  const handleLocationClick = (location: string, locationId: string) => {
+    // アコーディオン機能: 同じ項目をクリックした場合は閉じる、違う項目なら開く
+    if (expandedLocationId === locationId) {
+      setExpandedLocationId(null);
+      setClickedLocationId(null);
+    } else {
+      setExpandedLocationId(locationId);
+      setClickedLocationId(locationId);
+    }
+
+    if (!map || !markers.length) return;
+
+    const targetMarker = markers.find((marker: any) => {
+      const title = marker?.options?.title as string | undefined;
+      return title?.includes(location);
+    });
+
+    if (targetMarker) {
+      const latlng = targetMarker.getLatLng?.();
+      if (latlng) {
+        map.panTo(latlng);
+        map.setZoom(15);
+
+        // マーカーをクリックして情報ウィンドウを表示
+        targetMarker.openPopup?.();
+      }
     }
   };
 
-  // コンポーネント読み込み時にGPS座標を取得
-  useEffect(() => {
-    console.log("GPS取得を開始します...");
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          console.log("GPS取得成功:", position.coords);
-          const newGPS = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
-          setCurrentGPS(newGPS);
-          gpsData = { lat: 35.681236, lng: 139.767125 };
-          console.log("GPS座標を設定:", newGPS);
-        },
-        () => {},
-        {
-          enableHighAccuracy: true,
-          timeout: 30000,
-          maximumAge: 60000,
-        },
-      );
-    } else {
-      console.error("このブラウザはGeolocation APIをサポートしていません");
-      // GPS取得できない場合も東京駅の座標を使用
-      gpsData = { lat: 35.681236, lng: 139.767125 };
+  // 位置選択モードの開始
+
+  // 不要なuseMemo（悪いパターン）
+  const memoizedActiveTab = useMemo(() => {
+    return activeTab;
+  }, [activeTab]);
+
+  // 不要なuseCallback（悪いパターン）
+  const handleTabChange = useCallback((tab: string) => {
+    setActiveTab(tab);
+    // 記録登録タブの場合は必ずマップを閉じる
+    if (tab === 'record') {
     }
+    setIsMobileMenuOpen(false);
   }, []);
 
-  // 巨大な関数で全ての処理を行う（悪い書き方）
-  const doEverything = () => {
-    // 毒性チェック + 採取制限 + 図鑑検索 + 統計計算を全て一つの関数で
-    if (b && b.length > 0 && c > 0 && d && e) {
-      // マジックナンバーで毒性判定（悪い書き方）
-      let toxicityLevel = 0;
-      let isFound = false;
+  // 巨大なメソッド（100行以上）- バリデーション・毒性チェック・データ作成・保存・統計計算を1つの関数で処理
+  const handleFormSubmitAndProcessData = (e: React.FormEvent) => {
+    e.preventDefault();
 
-      // 同じような条件分岐をコピペ（悪い書き方）
-      if (b === "しいたけ") {
-        toxicityLevel = 0.1;
-        isFound = true;
-        if (toxicityLevel < 0.7) {
-          if (c <= 50) {
-            if (d === "秋" || d === "通年") {
-              temp = "安全";
-            } else {
-              temp = "季節外";
-            }
-          } else {
-            temp = "採取制限超過";
-          }
-        } else {
-          temp = "危険";
-        }
-      }
+    // バリデーション処理
+    if (!formData.name) {
+      alert('キノコ名を入力してください');
+      return;
+    }
+    if (!formData.location) {
+      alert('採取場所を入力してください');
+      return;
+    }
+    if (!formData.date) {
+      alert('採取日を選択してください');
+      return;
+    }
+    if (formData.count <= 0) {
+      alert('採取個数は1以上で入力してください');
+      return;
+    }
 
-      if (b === "まつたけ") {
-        toxicityLevel = 0.0;
-        isFound = true;
-        if (toxicityLevel < 0.7) {
-          if (c <= 5) {
-            if (d === "秋" || d === "通年") {
-              temp = "安全";
-            } else {
-              temp = "季節外";
-            }
-          } else {
-            temp = "採取制限超過";
-          }
-        } else {
-          temp = "危険";
-        }
-      }
-
-      if (b === "ベニテングタケ") {
-        toxicityLevel = 0.9;
-        isFound = true;
-        if (toxicityLevel < 0.7) {
-          if (c <= 0) {
-            if (d === "夏" || d === "通年") {
-              temp = "安全";
-            } else {
-              temp = "季節外";
-            }
-          } else {
-            temp = "採取制限超過";
-          }
-        } else {
-          temp = "危険！毒性高い！";
-        }
-      }
-
-      if (b === "エノキタケ") {
-        toxicityLevel = 0.0;
-        isFound = true;
-        if (toxicityLevel < 0.7) {
-          if (c <= 100) {
-            if (d === "冬" || d === "通年") {
-              temp = "安全";
-            } else {
-              temp = "季節外";
-            }
-          } else {
-            temp = "採取制限超過";
-          }
-        } else {
-          temp = "危険";
-        }
-      }
-
-      if (b === "ドクツルタケ") {
-        toxicityLevel = 0.95;
-        isFound = true;
-        if (toxicityLevel < 0.7) {
-          if (c <= 0) {
-            if (d === "夏" || d === "通年") {
-              temp = "安全";
-            } else {
-              temp = "季節外";
-            }
-          } else {
-            temp = "採取制限超過";
-          }
-        } else {
-          temp = "非常に危険！絶対に採取禁止！";
-        }
-      }
-
-      if (b === "ナメコ") {
-        toxicityLevel = 0.05;
-        isFound = true;
-        if (toxicityLevel < 0.7) {
-          if (c <= 30) {
-            if (d === "秋" || d === "通年") {
-              temp = "安全";
-            } else {
-              temp = "季節外";
-            }
-          } else {
-            temp = "採取制限超過";
-          }
-        } else {
-          temp = "危険";
-        }
-      }
-
-      if (!isFound) {
-        temp = "不明なキノコ";
-        toxicityLevel = 3.14; // マジックナンバー
-      }
-
-      // データをグローバル変数に追加
-      a++;
-      let newRecord: RecordData = {
-        id: a,
-        name: b,
-        count: c,
-        season: d,
-        location: e,
-        gps: { lat: currentGPS.lat, lng: currentGPS.lng },
-        toxicity: toxicityLevel,
-        status: temp,
-        timestamp: new Date(),
-      };
-
-      globalMushroomData.push(newRecord);
-
-      // 統計計算も同じ関数内で
-      let totalCount = 0;
-      let safeCount = 0;
-      let dangerousCount = 0;
-
-      // 同じような処理をコピペ（悪い書き方）
-      for (let i = 0; i < globalMushroomData.length; i++) {
-        totalCount += globalMushroomData[i].count;
-        if (globalMushroomData[i].toxicity < 0.7) {
-          safeCount++;
-        } else {
-          dangerousCount++;
-        }
-      }
-
-      let statsText = `総採取数: ${totalCount}, 安全: ${safeCount}, 危険: ${dangerousCount}`;
-      setG(statsText);
-
-      // フォームリセット
-      setB("");
-      setC(0);
-      setD("");
-      setE("");
-      setF(!f); // 強制再レンダリング
+    // 毒性レベルのチェック処理
+    let toxicityWarning = '';
+    if (formData.toxicityLevel >= 0.8) {
+      toxicityWarning = '非常に危険な毒性レベルです！';
+    } else if (formData.toxicityLevel >= 0.6) {
+      toxicityWarning = '危険な毒性レベルです。注意してください。';
+    } else if (formData.toxicityLevel >= 0.3) {
+      toxicityWarning = '軽微な毒性があります。';
     } else {
-      alert("すべての項目を入力してください");
+      toxicityWarning = '安全なレベルです。';
     }
-  };
 
-  // 削除機能も同じようなネストした条件分岐
-  const deleteRecord = (id: number) => {
-    for (let i = 0; i < globalMushroomData.length; i++) {
-      if (globalMushroomData[i].id === id) {
-        if (i >= 0) {
-          if (globalMushroomData.length > 0) {
-            globalMushroomData.splice(i, 1);
-            setF(!f);
+    // データベースとの照合処理
+    const matchingMushroom = mushroomDatabase.find(item =>
+      item.name.toLowerCase().includes(formData.name.toLowerCase())
+    );
 
-            // 統計再計算
-            let totalCount = 0;
-            let safeCount = 0;
-            let dangerousCount = 0;
-
-            for (let j = 0; j < globalMushroomData.length; j++) {
-              totalCount += globalMushroomData[j].count;
-              if (globalMushroomData[j].toxicity < 0.7) {
-                safeCount++;
-              } else {
-                dangerousCount++;
-              }
-            }
-
-            let statsText = `総採取数: ${totalCount}, 安全: ${safeCount}, 危険: ${dangerousCount}`;
-            setG(statsText);
-            break;
-          }
-        }
-      }
-    }
-  };
-
-  // 図鑑検索も巨大な関数で処理（悪い書き方）
-  const searchEverything = () => {
-    if (i !== "") {
-      if (i.length > 0) {
-        // 全カテゴリのキノコデータを統合
-        const allMushrooms = [
-          ...mushroomDatabase,
-          ...regionalMushrooms,
-          ...microMushrooms,
-          ...specializedMushrooms,
-          ...introducedMushrooms,
-        ];
-
-        // 検索キーワードを小文字に変換（大文字小文字を区別しない）
-        const searchKeyword = i.toLowerCase();
-
-        // LIKE検索（部分一致）でフィルタリング
-        const matchedMushrooms = allMushrooms.filter((mushroom) => {
-          const name = mushroom.name.toLowerCase();
-          const season = mushroom.season.toLowerCase();
-
-          // キノコ名、季節、毒性レベルで部分一致検索
-          return (
-            name.includes(searchKeyword) ||
-            season.includes(searchKeyword) ||
-            (searchKeyword.includes("毒") && mushroom.toxicity >= 0.7) ||
-            (searchKeyword.includes("安全") && mushroom.toxicity < 0.3) ||
-            (searchKeyword.includes("食用") && mushroom.toxicity < 0.3) ||
-            (searchKeyword.includes("危険") && mushroom.toxicity >= 0.7) ||
-            (searchKeyword.includes("春") && season.includes("春")) ||
-            (searchKeyword.includes("夏") && season.includes("夏")) ||
-            (searchKeyword.includes("秋") && season.includes("秋")) ||
-            (searchKeyword.includes("冬") && season.includes("冬")) ||
-            (searchKeyword.includes("通年") && season.includes("通年"))
-          );
-        });
-
-        // 重複を除去（同じ名前のキノコが複数カテゴリにある場合）
-        const uniqueMushrooms = matchedMushrooms.filter(
-          (mushroom, index, self) =>
-            index === self.findIndex((m) => m.name === mushroom.name),
+    if (matchingMushroom) {
+      if (matchingMushroom.toxicityLevel !== formData.toxicityLevel) {
+        const confirmed = confirm(
+          `データベースの毒性レベル（${matchingMushroom.toxicityLevel}）と入力値（${formData.toxicityLevel}）が異なります。続行しますか？`
         );
+        if (!confirmed) {
+          return;
+        }
+      }
+    }
 
-        setH(uniqueMushrooms);
+    // 新しい記録データの作成
+    const newRecord: MushroomRecord = {
+      id: Date.now().toString(),
+      name: formData.name,
+      location: formData.location,
+      date: formData.date,
+      count: formData.count,
+      toxicityLevel: formData.toxicityLevel,
+      memo: formData.memo,
+      coordinates: coordinates || undefined,
+      timestamp: Date.now()
+    };
+
+    // 既存記録との重複チェック
+    const isDuplicate = records.some(record =>
+      record.name === newRecord.name &&
+      record.location === newRecord.location &&
+      record.date === newRecord.date
+    );
+
+    if (isDuplicate) {
+      const confirmed = confirm('同じキノコ・場所・日付の記録が既に存在します。追加しますか？');
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    // 記録の保存処理
+    const updatedRecords = [...records, newRecord];
+    setRecords(updatedRecords);
+    localStorage.setItem('mushroomRecords', JSON.stringify(updatedRecords));
+
+    // 統計の再計算
+    let totalCount = 0;
+    let safeCount = 0;
+    let dangerousCount = 0;
+
+    updatedRecords.forEach(record => {
+      totalCount++;
+      if (record.toxicityLevel <= 0.2) {
+        safeCount++;
+      } else {
+        dangerousCount++;
+      }
+    });
+
+    // フォームのリセット
+    setFormData({
+      name: '',
+      location: '',
+      date: new Date().toISOString().split('T')[0],
+      count: 1,
+      toxicityLevel: 0,
+      memo: ''
+    });
+    setCoordinates(null);
+
+    // 成功メッセージ
+    alert(`記録を追加しました。${toxicityWarning}`);
+  };
+
+  // 巨大なメソッド（100行以上）- GPS取得・精度チェック・座標検証・日本国内チェックを1つの関数で処理
+  const handleGetCurrentLocation = () => {
+    setIsGettingLocation(true);
+
+    // GPS対応チェック
+    if (!navigator.geolocation) {
+      alert('このブラウザはGPS機能に対応していません');
+      setIsGettingLocation(false);
+      return;
+    }
+
+    // GPS取得オプションの設定
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    };
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const accuracy = position.coords.accuracy;
+
+        // 精度チェック
+        if (accuracy > 100) {
+          const confirmed = confirm(`GPS精度が低いです（誤差: ${Math.round(accuracy)}m）。この座標を使用しますか？`);
+          if (!confirmed) {
+            setIsGettingLocation(false);
+            return;
+          }
+        }
+
+        // 座標の妥当性チェック
+        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+          alert('無効な座標が取得されました');
+          setIsGettingLocation(false);
+          return;
+        }
+
+        // 日本国内チェック（大まかな範囲）
+        const isInJapan = (lat >= 24 && lat <= 46) && (lng >= 123 && lng <= 146);
+        if (!isInJapan) {
+          const confirmed = confirm('日本国外の座標のようです。この座標を使用しますか？');
+          if (!confirmed) {
+            setIsGettingLocation(false);
+            return;
+          }
+        }
+
+        // 座標の設定
+        setCoordinates({ lat, lng });
+        setIsGettingLocation(false);
+
+        // 成功メッセージ
+        alert(`GPS座標を取得しました\n緯度: ${lat.toFixed(6)}\n経度: ${lng.toFixed(6)}\n精度: ${Math.round(accuracy)}m`);
+      },
+      (error) => {
+        // エラーハンドリング（重複パターン）
+        let errorMessage = '';
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'GPS使用が拒否されました。ブラウザの設定を確認してください。';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'GPS情報が取得できませんでした。';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'GPS取得がタイムアウトしました。';
+            break;
+          default:
+            errorMessage = 'GPS取得中に不明なエラーが発生しました。';
+            break;
+        }
+        alert(errorMessage);
+        setIsGettingLocation(false);
+      },
+      options
+    );
+  };
+
+  // 深いネスト（4階層）とswitch文を使うべき箇所でif-else文を使用（悪いパターン）
+  const getToxicityLevelInfo = (level: number) => {
+    if (level <= 0.2) {
+      if (level === 0.0) {
+        if (level === 0) {
+          return { text: '安全', color: 'safe', bgColor: 'rgba(40, 167, 69, 0.1)' };
+        } else {
+          return { text: '安全', color: 'safe', bgColor: 'rgba(40, 167, 69, 0.1)' };
+        }
+      } else {
+        if (level <= 0.1) {
+          return { text: '安全', color: 'safe', bgColor: 'rgba(40, 167, 69, 0.1)' };
+        } else {
+          return { text: '安全', color: 'safe', bgColor: 'rgba(40, 167, 69, 0.1)' };
+        }
       }
     } else {
-      setH([]);
+      if (level <= 0.5) {
+        if (level <= 0.3) {
+          return { text: '軽微', color: 'mild', bgColor: 'rgba(255, 193, 7, 0.1)' };
+        } else {
+          return { text: '軽微', color: 'mild', bgColor: 'rgba(255, 193, 7, 0.1)' };
+        }
+      } else {
+        if (level <= 0.7) {
+          return { text: '中程度', color: 'moderate', bgColor: 'rgba(220, 53, 69, 0.1)' };
+        } else {
+          return { text: '高毒性', color: 'high', bgColor: 'rgba(220, 53, 69, 0.2)' };
+        }
+      }
     }
   };
+
+  // 重複した検索処理（悪いパターン）
+  const handleMushroomSearch = (query: string) => {
+    setSearchQuery(query);
+    if (query.trim() === '') {
+      setSearchResults([]);
+      return;
+    }
+
+    // 検索処理（重複パターン1）
+    const filtered = databaseItems.filter(item =>
+      item.name.toLowerCase().includes(query.toLowerCase())
+    );
+    setSearchResults(filtered);
+  };
+
+  const handleLocationSearch = (query: string) => {
+    setLocationSearchQuery(query);
+    if (query.trim() === '') {
+      setLocationSearchResults([]);
+      return;
+    }
+
+    // 検索処理（重複パターン2）
+    const filtered = records.filter(record =>
+      record.location.toLowerCase().includes(query.toLowerCase())
+    );
+    setLocationSearchResults(filtered);
+  };
+
+  // 重複した統計計算処理（悪いパターン）
+  const calculateRecordStats = () => {
+    let total = 0;
+    let safe = 0;
+    let dangerous = 0;
+
+    records.forEach(record => {
+      total++;
+      if (record.toxicityLevel <= 0.2) {
+        safe++;
+      } else {
+        dangerous++;
+      }
+    });
+
+    return { total, safe, dangerous };
+  };
+
+  const calculateSearchStats = (results: MushroomRecord[]) => {
+    let total = 0;
+    let safe = 0;
+    let dangerous = 0;
+
+    results.forEach(record => {
+      total++;
+      if (record.toxicityLevel <= 0.2) {
+        safe++;
+      } else {
+        dangerous++;
+      }
+    });
+
+    return { total, safe, dangerous };
+  };
+
+  // 重複したエラーハンドリング（悪いパターン）
+  const handleDeleteRecord = (id: string) => {
+    try {
+      const confirmed = confirm('この記録を削除しますか？');
+      if (!confirmed) return;
+
+      const updatedRecords = records.filter(record => record.id !== id);
+      setRecords(updatedRecords);
+      localStorage.setItem('mushroomRecords', JSON.stringify(updatedRecords));
+      alert('記録を削除しました');
+    } catch (error) {
+      console.error('削除エラー:', error);
+      alert('削除中にエラーが発生しました');
+    }
+  };
+
+  const handleFormInputChange = (field: string, value: string | number) => {
+    try {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    } catch (error) {
+      console.error('入力エラー:', error);
+      alert('入力中にエラーが発生しました');
+    }
+  };
+
+  // フィルタリング処理（カスタムフック化すべき処理がコンポーネント内に直書き）
+  const getFilteredMushrooms = () => {
+    if (selectedCategory === 'all') {
+      return mushroomDatabase;
+    }
+    return mushroomDatabase.filter(item => {
+      if (selectedCategory === 'edible') {
+        return item.category === 'edible';
+      } else if (selectedCategory === 'poisonous') {
+        return item.category === 'poisonous';
+      } else if (selectedCategory === 'medicinal') {
+        return item.category === 'medicinal';
+      }
+      return true;
+    });
+  };
+
+  // 地図データ処理（カスタムフック化すべき処理がコンポーネント内に直書き）
+  const getMapData = () => {
+    const locationGroups: { [key: string]: MushroomRecord[] } = {};
+
+    records.forEach(record => {
+      if (!locationGroups[record.location]) {
+        locationGroups[record.location] = [];
+      }
+      locationGroups[record.location].push(record);
+    });
+
+    return Object.entries(locationGroups).map(([location, locationRecords]) => {
+      const hasDangerous = locationRecords.some(r => r.toxicityLevel > 0.2);
+      const totalCount = locationRecords.length;
+      const latestDate = Math.max(...locationRecords.map(r => new Date(r.date).getTime()));
+
+    return {
+        location,
+        records: locationRecords,
+        isDangerous: hasDangerous,
+        count: totalCount,
+        latestDate: new Date(latestDate).toLocaleDateString('ja-JP')
+      };
+    });
+  };
+
+  const stats = calculateRecordStats();
+  const filteredMushrooms = getFilteredMushrooms();
+  const mapData = getMapData();
+  const locationStatsMemo = useMemo(() => calculateSearchStats(locationSearchResults), [locationSearchResults]);
 
   return (
-    <>
-      <Head>
-        <title>キノコ狩り記録システム（悪い書き方バージョン）</title>
-        <meta name="description" content="安全で楽しいキノコ採取をサポート" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+    <div className="app-container">
+      <header className="app-header">
+        <h1 className="app-title">🍄 キノコ狩り記録システム</h1>
+        <p className="app-subtitle">安全で楽しいキノコ狩りをサポート</p>
+      </header>
 
-      <div className="app-container">
-        <header className="app-header">
-          <h1 className="app-title">🍄 キノコ狩り記録システム</h1>
-          <p className="app-subtitle">安全で楽しいキノコ採取をサポート</p>
-        </header>
+      {/* デスクトップナビゲーション */}
+      <nav className="nav-tabs desktop-nav">
+        <button
+          className={`nav-tab ${memoizedActiveTab === 'record' ? 'active' : ''}`}
+          onClick={() => handleTabChange('record')}
+        >
+          <Plus size={20} />
+          記録登録
+        </button>
+        <button
+          className={`nav-tab ${memoizedActiveTab === 'list' ? 'active' : ''}`}
+          onClick={() => handleTabChange('list')}
+        >
+          📋 記録一覧
+        </button>
+        <button
+          className={`nav-tab ${memoizedActiveTab === 'map' ? 'active' : ''}`}
+          onClick={() => handleTabChange('map')}
+        >
+          <MapPin size={20} />
+          地図表示
+        </button>
+        <button
+          className={`nav-tab ${memoizedActiveTab === 'database' ? 'active' : ''}`}
+          onClick={() => handleTabChange('database')}
+        >
+          <Book size={20} />
+          キノコ図鑑
+        </button>
+        <button
+          className={`nav-tab ${memoizedActiveTab === 'search' ? 'active' : ''}`}
+          onClick={() => handleTabChange('search')}
+        >
+          <Search size={20} />
+          記録検索
+        </button>
+      </nav>
 
-        {/* デスクトップナビゲーション */}
-        <nav className="nav-tabs desktop-nav">
-          <button
-            className={`nav-tab ${currentPage === "home" ? "active" : ""}`}
-            onClick={() => setCurrentPage("home")}
-          >
-            <Plus size={18} style={{ marginRight: "8px" }} />
-            記録登録
-          </button>
-          <button
-            className={`nav-tab ${currentPage === "records" ? "active" : ""}`}
-            onClick={() => setCurrentPage("records")}
-          >
-            <List size={18} style={{ marginRight: "8px" }} />
-            採取記録
-          </button>
-          <button
-            className={`nav-tab ${currentPage === "map" ? "active" : ""}`}
-            onClick={() => setCurrentPage("map")}
-          >
-            <Map size={18} style={{ marginRight: "8px" }} />
-            地図表示
-          </button>
-          <button
-            className={`nav-tab ${currentPage === "database" ? "active" : ""}`}
-            onClick={() => setCurrentPage("database")}
-          >
-            <Book size={18} style={{ marginRight: "8px" }} />
-            キノコ図鑑
-          </button>
-        </nav>
+      {/* モバイルナビゲーション */}
+      <nav className="mobile-nav">
+        <button
+          className={`hamburger-button ${isMobileMenuOpen ? 'menu-open' : ''}`}
+          onClick={() => setIsMobileMenuOpen(true)}
+        >
+          <Menu size={24} />
+        </button>
 
-        {/* モバイルナビゲーション */}
-        <div className="mobile-nav">
-          <button
-            className={`hamburger-button ${isMobileMenuOpen ? "menu-open" : ""}`}
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="メニューを開く"
-          >
-            <Menu size={20} />
-          </button>
+        {isMobileMenuOpen && (
+          <>
+            <div className="mobile-menu-overlay" onClick={() => setIsMobileMenuOpen(false)} />
+            <div className="mobile-menu open">
+              <div className="mobile-menu-header">
+                <h3 className="mobile-menu-title">メニュー</h3>
+                <button
+                  className="mobile-close-button"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="mobile-menu-content">
+                <button
+                  className={`mobile-nav-item ${activeTab === 'record' ? 'active' : ''}`}
+                  onClick={() => handleTabChange('record')}
+                >
+                  <Plus size={20} />
+                  記録登録
+                </button>
+                <button
+                  className={`mobile-nav-item ${activeTab === 'list' ? 'active' : ''}`}
+                  onClick={() => handleTabChange('list')}
+                >
+                  📋 記録一覧
+                </button>
+                <button
+                  className={`mobile-nav-item ${activeTab === 'map' ? 'active' : ''}`}
+                  onClick={() => handleTabChange('map')}
+                >
+                  <MapPin size={20} />
+                  地図表示
+                </button>
+                <button
+                  className={`mobile-nav-item ${activeTab === 'database' ? 'active' : ''}`}
+                  onClick={() => handleTabChange('database')}
+                >
+                  <Book size={20} />
+                  キノコ図鑑
+                </button>
+                <button
+                  className={`mobile-nav-item ${activeTab === 'search' ? 'active' : ''}`}
+                  onClick={() => handleTabChange('search')}
+                >
+                  <Search size={20} />
+                  データベース検索
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </nav>
 
-          <div className={`mobile-menu ${isMobileMenuOpen ? "open" : ""}`}>
-            <button
-              className="mobile-nav-item close-button"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <X size={20} />
-              <span>閉じる</span>
+      {/* 記録登録タブ */}
+      {activeTab === 'record' && (
+        <div className="card">
+          <h2 className="card-title">
+            <Plus size={24} />
+            新しい採取記録
+          </h2>
+          <form onSubmit={handleFormSubmitAndProcessData}>
+            <div className="form-group">
+              <label className="form-label">キノコ名 *</label>
+              <input
+                type="text"
+                className="form-input"
+                value={formData.name}
+                onChange={(e) => handleFormInputChange('name', e.target.value)}
+                placeholder="例: シイタケ"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">採取場所 *</label>
+              <input
+                type="text"
+                className="form-input"
+                value={formData.location}
+                onChange={(e) => handleFormInputChange('location', e.target.value)}
+                placeholder="例: 〇〇山の麓"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">採取日 *</label>
+              <input
+                type="date"
+                className="form-input"
+                value={formData.date}
+                onChange={(e) => handleFormInputChange('date', e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">採取個数 *</label>
+              <input
+                type="number"
+                className="form-input"
+                value={formData.count}
+                onChange={(e) => handleFormInputChange('count', parseInt(e.target.value) || 1)}
+                min="1"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">毒性レベル (0.0 = 安全, 1.0 = 非常に危険)</label>
+              <input
+                type="range"
+                className="form-input"
+                min="0"
+                max="1"
+                step="0.1"
+                value={formData.toxicityLevel}
+                onChange={(e) => handleFormInputChange('toxicityLevel', parseFloat(e.target.value))}
+              />
+              <div style={{ textAlign: 'center', marginTop: '8px', fontWeight: 'bold' }}>
+                {formData.toxicityLevel.toFixed(1)} - {getToxicityLevelInfo(formData.toxicityLevel).text}
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">GPS座標</label>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleGetCurrentLocation}
+                  disabled={isGettingLocation}
+                >
+                  <Navigation size={16} />
+                  {isGettingLocation ? '取得中...' : '現在地を取得'}
+                </button>
+                <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      if (showLocationMap) {
+                        closeLocationPicker(); // 閉じる時
+                      } else {
+                        openLocationPicker(); // 開く時に初期化
+                      }
+                    }}
+                  >
+                  <MapPin size={16} />
+                  地図で選択
+                </button>
+              </div>
+
+              {coordinates && (
+                <div style={{
+                  padding: '8px',
+                  background: 'var(--surface-elevated)',
+                  borderRadius: 'var(--border-radius)',
+                  fontSize: '14px',
+                  color: 'var(--text-secondary)'
+                }}>
+                  📍 緯度: {coordinates.lat.toFixed(6)}, 経度: {coordinates.lng.toFixed(6)}
+                </div>
+              )}
+
+              {showLocationMap && (
+                <div style={{ marginTop: '16px' }}>
+                  {!isMapLoaded ? (
+                    <div style={{
+                      height: '300px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'var(--surface-elevated)',
+                      borderRadius: 'var(--border-radius)',
+                      color: 'var(--text-secondary)',
+                      border: '1px solid var(--border-color)'
+                    }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <p>地図を読み込み中...</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      id="location-selection-map"
+                      style={{
+                        height: '300px',
+                        width: '100%',
+                        borderRadius: 'var(--border-radius)',
+                        border: '1px solid var(--border-color)',
+                        cursor: 'crosshair'
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">メモ</label>
+              <textarea
+                className="form-input"
+                value={formData.memo}
+                onChange={(e) => handleFormInputChange('memo', e.target.value)}
+                placeholder="特徴や注意点など"
+                rows={3}
+              />
+            </div>
+
+            <button type="submit" className="btn btn-primary">
+              <Plus size={16} />
+              記録を追加
             </button>
-            <button
-              className={`mobile-nav-item ${currentPage === "home" ? "active" : ""}`}
-              onClick={() => {
-                setCurrentPage("home");
-                setIsMobileMenuOpen(false);
-              }}
-            >
-              <Plus size={20} />
-              <span>記録登録</span>
-            </button>
-            <button
-              className={`mobile-nav-item ${currentPage === "records" ? "active" : ""}`}
-              onClick={() => {
-                setCurrentPage("records");
-                setIsMobileMenuOpen(false);
-              }}
-            >
-              <List size={20} />
-              <span>採取記録</span>
-            </button>
-            <button
-              className={`mobile-nav-item ${currentPage === "map" ? "active" : ""}`}
-              onClick={() => {
-                setCurrentPage("map");
-                setIsMobileMenuOpen(false);
-              }}
-            >
-              <Map size={20} />
-              <span>地図表示</span>
-            </button>
-            <button
-              className={`mobile-nav-item ${currentPage === "database" ? "active" : ""}`}
-              onClick={() => {
-                setCurrentPage("database");
-                setIsMobileMenuOpen(false);
-              }}
-            >
-              <Book size={20} />
-              <span>キノコ図鑑</span>
-            </button>
+          </form>
+        </div>
+      )}
+
+      {/* 記録一覧タブ */}
+      {activeTab === 'list' && (
+        <div>
+          <div className="stats">
+            <h3>📊 採取記録統計</h3>
+            <p>総記録数: {stats.total}件</p>
+            <p>安全なキノコ: {stats.safe}件</p>
+            <p>注意が必要なキノコ: {stats.dangerous}件</p>
           </div>
 
-          {isMobileMenuOpen && (
-            <div
-              className="mobile-menu-overlay"
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
-          )}
-        </div>
-        {currentPage === "home" && (
-          <>
-            <div className="card">
-              <h2 className="card-title">新しい採取記録</h2>
-
-              <div className="form-group">
-                <label className="form-label">キノコの名前</label>
-                <input
-                  className="form-input"
-                  type="text"
-                  value={b}
-                  onChange={(event) => setB(event.target.value)}
-                  placeholder="例: しいたけ"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">採取数</label>
-                <input
-                  className="form-input"
-                  type="number"
-                  value={c}
-                  onChange={(event) => setC(parseInt(event.target.value) || 0)}
-                  placeholder="採取した個数"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">季節</label>
-                <select
-                  className="form-select"
-                  value={d}
-                  onChange={(event) => setD(event.target.value)}
-                >
-                  <option value="">選択してください</option>
-                  <option value="春">春</option>
-                  <option value="夏">夏</option>
-                  <option value="秋">秋</option>
-                  <option value="冬">冬</option>
-                  <option value="通年">通年</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">採取場所</label>
-                <input
-                  className="form-input"
-                  type="text"
-                  value={e}
-                  onChange={(event) => setE(event.target.value)}
-                  placeholder="例: 〇〇山"
-                />
-                <div
-                  style={{
-                    fontSize: "12px",
-                    color: "var(--text-muted)",
-                    marginTop: "4px",
-                  }}
-                >
-                  ✅ 現在のGPS座標: {currentGPS.lat.toFixed(6)},{" "}
-                  {currentGPS.lng.toFixed(6)}
-                </div>
-              </div>
-
-              <button className="btn btn-primary" onClick={doEverything}>
-                記録を追加
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h2 className="card-title">📋 採取記録一覧</h2>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowCoordinates(!showCoordinates)}
+              >
+                {showCoordinates ? <EyeOff size={16} /> : <Eye size={16} />}
+                座標表示
               </button>
             </div>
 
-            {g && (
-              <div className="stats">
-                <h3>📊 統計情報</h3>
-                <p>{g}</p>
-              </div>
-            )}
-          </>
-        )}
-
-        {currentPage === "records" && (
-          <>
-            <div className="card">
-              <h2 className="card-title">採取記録一覧</h2>
-
-              {globalMushroomData.length === 0 ? (
-                <p
-                  style={{
-                    textAlign: "center",
-                    color: "var(--text-muted)",
-                    padding: "40px 0",
-                  }}
-                >
-                  まだ採取記録がありません。
-                  <br />
-                  「記録登録」タブから新しい記録を追加してください。
-                </p>
-              ) : (
-                globalMushroomData.map((record: RecordData) => (
+            {records.length === 0 ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+                まだ記録がありません。「記録登録」タブから新しい記録を追加してください。
+              </p>
+            ) : (
+              records.map((record) => {
+                const toxicityInfo = getToxicityLevelInfo(record.toxicityLevel);
+                return (
                   <div
                     key={record.id}
-                    className={`record-item ${record.toxicity < 0.7 ? "safe" : "dangerous"}`}
+                    className={`record-item ${toxicityInfo.color}`}
+                    style={{ backgroundColor: toxicityInfo.bgColor }}
                   >
                     <div className="record-header">
                       <h3 className="record-title">{record.name}</h3>
-                      <span className="record-id">ID: {record.id}</span>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <span className="record-id">ID: {record.id}</span>
+                        <button
+                          className="btn btn-danger"
+                          onClick={() => handleDeleteRecord(record.id)}
+                          style={{ padding: '4px 8px', fontSize: '12px' }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
+
                     <div className="record-details">
-                      <div className="record-info">
-                        <div className="info-item">
-                          <Hash size={16} />
-                          <span>採取数: {record.count}個</span>
-                        </div>
-                        <div className="info-item">
-                          <Calendar size={16} />
-                          <span>季節: {record.season}</span>
-                        </div>
-                        <div className="info-item">
-                          <MapPin size={16} />
-                          <span>場所: {record.location}</span>
-                        </div>
+                      <div className="record-detail">
+                        <strong>採取場所:</strong> {record.location}
                       </div>
-                      <div className="record-status">
-                        <span
-                          className={`status-badge ${record.toxicity < 0.7 ? "safe" : "dangerous"}`}
-                        >
-                          {record.status}
-                        </span>
-                        <span className="toxicity-level">
-                          毒性: {record.toxicity}
-                        </span>
+                      <div className="record-detail">
+                        <strong>採取日:</strong> {record.date}
+                      </div>
+                      <div className="record-detail">
+                        <strong>採取個数:</strong> {record.count}個
+                      </div>
+                      <div className="record-detail">
+                        <strong>毒性レベル:</strong> {record.toxicityLevel.toFixed(1)} ({toxicityInfo.text})
                       </div>
                     </div>
-                    <div className="record-actions">
-                      <span className="record-timestamp">
-                        {record.timestamp.toLocaleString()}
-                      </span>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => deleteRecord(record.id)}
-                      >
-                        削除
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </>
-        )}
 
-        {currentPage === "map" && (
-          <div className="card">
-            <h2 className="card-title">採取記録マップ</h2>
-
-            {globalMushroomData.length === 0 ? (
-              <p
-                style={{
-                  textAlign: "center",
-                  color: "var(--text-muted)",
-                  padding: "40px 0",
-                }}
-              >
-                まだ採取記録がありません。
-                <br />
-                「記録登録」タブから新しい記録を追加してください。
-              </p>
-            ) : (
-              <>
-                <div className="map-container">
-                  {/* OpenStreetMapを使った実際の地図表示 */}
-                  {/* Google Maps API対応版 - 環境変数でAPIキーが設定されている場合 */}
-                  {process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? (
-                    <div
-                      style={{
-                        width: "100%",
-                        height: "400px",
-                        border: "1px solid var(--border-color)",
-                        borderRadius: "var(--border-radius)",
-                        overflow: "hidden",
-                        position: "relative",
-                      }}
-                    >
-                      <iframe
-                        width="100%"
-                        height="100%"
-                        style={{ border: 0 }}
-                        src={`https://www.google.com/maps/embed/v1/view?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&center=${currentGPS.lat},${currentGPS.lng}&zoom=15`}
-                        title="Google Maps - 採取地点マップ"
-                      />
-                    </div>
-                  ) : (
-                    /* OpenStreetMap代替表示 */
-                    <div
-                      style={{
-                        width: "100%",
-                        height: "400px",
-                        border: "1px solid var(--border-color)",
-                        borderRadius: "var(--border-radius)",
-                        overflow: "hidden",
-                        position: "relative",
-                      }}
-                    >
-                      <iframe
-                        width="100%"
-                        height="100%"
-                        style={{ border: 0 }}
-                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${currentGPS.lng - 0.01},${currentGPS.lat - 0.01},${currentGPS.lng + 0.01},${currentGPS.lat + 0.01}&layer=mapnik&marker=${currentGPS.lat},${currentGPS.lng}`}
-                        title="採取地点マップ"
-                      />
-                    </div>
-                  )}
-
-                  {/* 採取地点のオーバーレイ表示 */}
-                  {globalMushroomData.length > 0 && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "10px",
-                        right: "10px",
-                        background: "rgba(255, 255, 255, 0.95)",
-                        padding: "12px",
-                        borderRadius: "var(--border-radius)",
-                        boxShadow: "var(--shadow-medium)",
-                        maxWidth: "200px",
-                        maxHeight: "300px",
-                        overflowY: "auto",
-                      }}
-                    >
-                      <h4
-                        style={{
-                          margin: "0 0 8px 0",
-                          fontSize: "14px",
-                          color: "var(--primary-color)",
-                        }}
-                      >
-                        採取地点 ({globalMushroomData.length}件)
-                      </h4>
-                      {globalMushroomData.map((record: RecordData) => (
-                        <div
-                          key={record.id}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            padding: "4px 0",
-                            borderBottom: "1px solid var(--border-color)",
-                            fontSize: "12px",
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: "16px",
-                              height: "16px",
-                              background:
-                                record.toxicity < 0.7 ? "#28a745" : "#dc3545",
-                              borderRadius: "50%",
-                              color: "white",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: "10px",
-                              fontWeight: "bold",
-                              flexShrink: 0,
-                            }}
-                          >
-                            {record.id}
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <div
-                              style={{
-                                fontWeight: "600",
-                                color: "var(--text-primary)",
-                              }}
-                            >
-                              {record.name}
-                            </div>
-                            <div style={{ color: "var(--text-secondary)" }}>
-                              {record.location}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div
-                  style={{
-                    marginTop: "var(--spacing)",
-                    padding: "var(--spacing)",
-                    background: "var(--surface-elevated)",
-                    borderRadius: "var(--border-radius)",
-                    textAlign: "center",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: "12px",
-                  }}
-                >
-                  <p
-                    style={{
-                      margin: "0 0 8px 0",
-                      fontSize: "14px",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    📍 基準地点: 東京駅 ({currentGPS.lat.toFixed(6)},{" "}
-                    {currentGPS.lng.toFixed(6)})
-                  </p>
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => {
-                      const url = `https://www.google.com/maps?q=${currentGPS.lat},${currentGPS.lng}&z=15`;
-                      window.open(url, "_blank");
-                    }}
-                    style={{ fontSize: "14px" }}
-                  >
-                    <MapPin size={16} />
-                    Google Mapsで開く
-                  </button>
-                </div>
-
-                <div
-                  className="map-legend"
-                  style={{ marginTop: "var(--spacing)" }}
-                >
-                  <div className="legend-item">
-                    <div className="legend-marker safe"></div>
-                    <span>安全なキノコ</span>
-                  </div>
-                  <div className="legend-item">
-                    <div className="legend-marker dangerous"></div>
-                    <span>危険なキノコ</span>
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      color: "var(--text-muted)",
-                      marginLeft: "auto",
-                    }}
-                  >
-                    📍 {globalMushroomData.length}件の採取記録
-                  </div>
-                </div>
-
-                <div className="map-records">
-                  <h3
-                    style={{
-                      marginBottom: "var(--spacing)",
-                      color: "var(--primary-color)",
-                    }}
-                  >
-                    採取地点一覧
-                  </h3>
-
-                  {globalMushroomData.map((record: RecordData) => (
-                    <div
-                      key={record.id}
-                      className={`map-record-item ${record.toxicity < 0.7 ? "safe" : "dangerous"}`}
-                    >
-                      <div className="map-record-header">
-                        <div
-                          className={`map-marker ${record.toxicity < 0.7 ? "safe" : "dangerous"}`}
-                        >
-                          {record.id}
-                        </div>
-                        <div className="map-record-info">
-                          <h4>{record.name}</h4>
-                          <p className="location-info">
-                            <MapPin
-                              size={14}
-                              style={{ display: "inline", marginRight: "4px" }}
-                            />
-                            {record.location}
-                          </p>
-                        </div>
-                        <div className="map-record-details">
-                          <span className="count-badge">{record.count}個</span>
-                          <span
-                            className={`status-badge ${record.toxicity < 0.7 ? "safe" : "dangerous"}`}
-                          >
-                            {record.status}
-                          </span>
-                        </div>
-                      </div>
-
+                    {showCoordinates && record.coordinates && (
                       <div className="gps-coordinates">
                         <strong>GPS座標:</strong>
                         <span className="coordinates">
-                          {record.gps && record.gps.lat
-                            ? record.gps.lat.toFixed(6)
-                            : "0.000000"}
-                          ,{" "}
-                          {record.gps && record.gps.lng
-                            ? record.gps.lng.toFixed(6)
-                            : "0.000000"}
+                          緯度: {record.coordinates.lat.toFixed(6)}, 経度: {record.coordinates.lng.toFixed(6)}
                         </span>
-                        <button
-                          className="btn-link"
-                          onClick={() => {
-                            const lat =
-                              record.gps && record.gps.lat ? record.gps.lat : 0;
-                            const lng =
-                              record.gps && record.gps.lng ? record.gps.lng : 0;
-                            const url = `https://www.google.com/maps?q=${lat},${lng}`;
-                            window.open(url, "_blank");
-                          }}
-                        >
-                          Google Mapsで開く
-                        </button>
                       </div>
+                    )}
 
-                      <div className="record-timestamp">
-                        記録日時: {record.timestamp.toLocaleString()}
+                    {record.memo && (
+                      <div className="record-detail">
+                        <strong>メモ:</strong> {record.memo}
                       </div>
+                    )}
+
+                    <div className="record-timestamp">
+                      登録日時: {new Date(record.timestamp).toLocaleString('ja-JP')}
                     </div>
-                  ))}
-                </div>
-              </>
+
+                    {record.toxicityLevel > 0.2 && (
+                      <div className="warning">
+                        ⚠️ 注意: このキノコは毒性がある可能性があります
+                      </div>
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
-        )}
+        </div>
+      )}
 
-        {currentPage === "database" && (
+      {/* 地図表示タブ */}
+      {activeTab === 'map' && (
+        <div>
           <div className="card">
-            <h2 className="card-title">キノコ図鑑</h2>
+            <h2 className="card-title">
+              <MapPin size={24} />
+              採取場所マップ
+            </h2>
 
-            {/* 図鑑内タブ切り替え */}
-            <div className="database-tabs">
-              <button
-                className={`database-tab ${databaseTab === "encyclopedia" ? "active" : ""}`}
-                onClick={() => setDatabaseTab("encyclopedia")}
-              >
-                <Book size={18} />
-                図鑑
-              </button>
-              <button
-                className={`database-tab ${databaseTab === "search" ? "active" : ""}`}
-                onClick={() => setDatabaseTab("search")}
-              >
-                <Search size={18} />
-                検索
-              </button>
-            </div>
-
-            {/* 検索タブの内容 */}
-            {databaseTab === "search" && (
-              <>
-                <div className="form-group">
-                  <label className="form-label">キノコ名で検索</label>
-                  <input
-                    className="form-input"
-                    type="text"
-                    value={i}
-                    onChange={(event) => setI(event.target.value)}
-                    placeholder="例: しいたけ、毒、食用"
-                  />
-                  <button
-                    className="btn btn-secondary"
-                    onClick={searchEverything}
-                    style={{ marginTop: "12px" }}
-                  >
-                    <Search size={18} />
-                    検索実行
-                  </button>
+            {!isMapLoaded ? (
+              <div style={{
+                height: '400px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'var(--surface-elevated)',
+                borderRadius: 'var(--border-radius)',
+                color: 'var(--text-secondary)',
+                border: '1px solid var(--border-color)'
+              }}>
+                <div style={{ textAlign: 'center' }}>
+                  <p>地図を読み込み中...</p>
                 </div>
+              </div>
+            ) : (
+              <div
+                id="google-map"
+                style={{
+                  height: '400px',
+                  width: '100%',
+                  borderRadius: 'var(--border-radius)',
+                  border: '1px solid var(--border-color)',
+                  cursor: isSelectingLocation ? 'crosshair' : 'default'
+                }}
+              />
+            )}
 
-                {h.length > 0 && (
-                  <div className="search-results-container">
-                    <div className="search-results-header">
-                      <Search size={20} />
-                      <h3>検索結果</h3>
+            <div className="map-legend" style={{ marginTop: '16px' }}>
+              <div className="legend-item">
+                <div style={{
+                  width: '12px',
+                  height: '12px',
+                  background: '#28a745',
+                  borderRadius: '50%',
+                  border: '2px solid white',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                }}></div>
+                <span>安全なキノコの採取場所</span>
+              </div>
+              <div className="legend-item">
+                <div style={{
+                  width: '12px',
+                  height: '12px',
+                  background: '#dc3545',
+                  borderRadius: '50%',
+                  border: '2px solid white',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                }}></div>
+                <span>注意が必要なキノコの採取場所</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="map-records">
+            <h3 style={{ marginBottom: '16px', color: 'var(--primary-color)' }}>📍 採取場所別記録</h3>
+            {mapData.length === 0 ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+                採取記録がありません
+              </p>
+            ) : (
+              mapData.map((locationData, index) => {
+                const locationId = `location-${index}`;
+                const isExpanded = expandedLocationId === locationId;
+                const isClicked = clickedLocationId === locationId;
+
+                return (
+                  <div
+                    key={locationId}
+                    className={`map-record-item ${locationData.isDangerous ? 'dangerous' : 'safe'}`}
+                    style={{
+                      cursor: 'pointer',
+                      border: isClicked ? '2px solid var(--primary-color)' : '1px solid var(--border-color)',
+                      transform: isClicked ? 'scale(1.02)' : 'scale(1)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onClick={() => handleLocationClick(locationData.location, locationId)}
+                  >
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '16px'
+                    }}>
+                      <div>
+                        <h4 style={{
+                          margin: '0 0 8px 0',
+                          color: 'var(--primary-color)',
+                          fontSize: '18px',
+                          fontWeight: '600'
+                        }}>
+                          📍 {locationData.location}
+                        </h4>
+                        <div style={{
+                          display: 'flex',
+                          gap: '16px',
+                          fontSize: '14px',
+                          color: 'var(--text-secondary)'
+                        }}>
+                          <span>記録数: {locationData.count}件</span>
+                          <span>最新: {locationData.latestDate}</span>
+                          <span style={{
+                            color: locationData.isDangerous ? '#dc3545' : '#28a745',
+                            fontWeight: '600'
+                          }}>
+                            {locationData.isDangerous ? '⚠️ 注意が必要' : '✅ 安全'}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{
+                        fontSize: '20px',
+                        color: 'var(--text-muted)',
+                        transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.3s ease'
+                      }}>
+                        ▼
+                      </div>
                     </div>
 
-                    <div className="search-stats">
-                      <span>検索結果: {h.length}件</span>
-                      <span>
-                        安全: {h.filter((m) => m.toxicity < 0.3).length}件
-                      </span>
-                      <span>
-                        危険: {h.filter((m) => m.toxicity >= 0.7).length}件
-                      </span>
-                      <span>
-                        採取禁止: {h.filter((m) => m.limit === 0).length}件
-                      </span>
-                    </div>
+                    {/* アコーディオンコンテンツ */}
+                    {isExpanded && (
+                      <div style={{
+                        marginTop: '16px',
+                        paddingTop: '16px',
+                        borderTop: '1px solid var(--border-color)',
+                        animation: 'fadeIn 0.3s ease-out'
+                      }}>
+                        <h5 style={{
+                          margin: '0 0 12px 0',
+                          color: 'var(--primary-color)',
+                          fontSize: '16px',
+                          fontWeight: '600'
+                        }}>
+                          📋 この場所の採取記録 ({locationData.records.length}件)
+                        </h5>
+                        <div style={{
+                          display: 'grid',
+                          gap: '8px',
+                          maxHeight: '200px',
+                          overflowY: 'auto'
+                        }}>
+                          {locationData.records.map((record) => {
+                            const toxicityInfo = getToxicityLevelInfo(record.toxicityLevel);
+                            return (
+                              <div key={record.id} style={{
+                                padding: '8px 12px',
+                                background: toxicityInfo.bgColor,
+                                borderRadius: '6px',
+                                border: `1px solid ${toxicityInfo.color === 'safe' ? '#c3e6cb' : '#f5c6cb'}`,
+                                fontSize: '14px'
+                              }}>
+                                <strong style={{ color: 'var(--primary-color)' }}>{record.name}</strong>
+                                <span style={{ margin: '0 8px', color: 'var(--text-muted)' }}>•</span>
+                                <span>{record.date}</span>
+                                <span style={{ margin: '0 8px', color: 'var(--text-muted)' }}>•</span>
+                                <span>{record.count}個</span>
+                                <span style={{ margin: '0 8px', color: 'var(--text-muted)' }}>•</span>
+                                <span style={{ color: toxicityInfo.color === 'safe' ? '#28a745' : '#dc3545', fontWeight: '600' }}>
+                                  毒性: {record.toxicityLevel.toFixed(1)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
 
+      {/* キノコ図鑑タブ */}
+      {activeTab === 'database' && (
+        <div className="card">
+          <h2 className="card-title">
+            <Book size={24} />
+            キノコ図鑑
+          </h2>
+
+          <div className="mushroom-category-tabs">
+            <button
+              className={`category-tab ${selectedCategory === 'all' ? 'active' : ''}`}
+              onClick={() => setSelectedCategory('all')}
+            >
+              全て
+            </button>
+            <button
+              className={`category-tab ${selectedCategory === 'edible' ? 'active' : ''}`}
+              onClick={() => setSelectedCategory('edible')}
+            >
+              食用
+            </button>
+            <button
+              className={`category-tab ${selectedCategory === 'poisonous' ? 'active' : ''}`}
+              onClick={() => setSelectedCategory('poisonous')}
+            >
+              毒キノコ
+            </button>
+            <button
+              className={`category-tab ${selectedCategory === 'medicinal' ? 'active' : ''}`}
+              onClick={() => setSelectedCategory('medicinal')}
+            >
+              薬用
+            </button>
+          </div>
+
+          {selectedCategory !== 'all' && (
+            <div className="category-description">
+              <p>
+                {selectedCategory === 'edible' && '食用として安全に摂取できるキノコの一覧です。'}
+                {selectedCategory === 'poisonous' && '毒性があり、摂取すると危険なキノコの一覧です。絶対に採取・摂取しないでください。'}
+                {selectedCategory === 'medicinal' && '薬用として利用されるキノコの一覧です。適量での使用が推奨されます。'}
+              </p>
+            </div>
+          )}
+
+          <div className="mushroom-table">
+            <div className="mushroom-table-header">
+              <div className="mushroom-table-cell header">キノコ名</div>
+              <div className="mushroom-table-cell header">毒性レベル</div>
+              <div className="mushroom-table-cell header">採取季節</div>
+              <div className="mushroom-table-cell header">採取制限</div>
+            </div>
+            {getFilteredMushrooms().map((mushroom) => {
+              const toxicityInfo = getToxicityLevelInfo(mushroom.toxicityLevel);
+              return (
+                <div
+                  key={mushroom.id}
+                  className={`mushroom-table-row ${toxicityInfo.color}`}
+                  data-toxicity={toxicityInfo.color}
+                >
+                  <div className="mushroom-table-cell name">{mushroom.name}</div>
+                  <div className="mushroom-table-cell toxicity">{mushroom.toxicityLevel.toFixed(1)}</div>
+                  <div className="mushroom-table-cell season">{mushroom.season}</div>
+                  <div className="mushroom-table-cell limit">{mushroom.limit}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* データベース検索タブ */}
+      {activeTab === 'search' && (
+        <div className="card">
+          <h2 className="card-title">
+            <Search size={24} />
+            記録検索
+          </h2>
+
+          <div className="database-tabs">
+            <button
+              className={`database-tab ${databaseTab === 'mushroom' ? 'active' : ''}`}
+              onClick={() => setDatabaseTab('mushroom')}
+            >
+              <Search size={16} />
+              キノコ検索
+            </button>
+            <button
+              className={`database-tab ${databaseTab === 'location' ? 'active' : ''}`}
+              onClick={() => setDatabaseTab('location')}
+            >
+              <MapPin size={16} />
+              場所検索
+            </button>
+          </div>
+
+          {databaseTab === 'mushroom' && (
+            <div>
+              <div className="form-group">
+                <label className="form-label">キノコ名で検索</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={searchQuery}
+                  onChange={(e) => handleMushroomSearch(e.target.value)}
+                  placeholder="キノコ名を入力してください"
+                />
+              </div>
+
+              {searchQuery && (
+                <div className="search-results-container">
+                  <div className="search-results-header">
+                    <Search size={16} />
+                    <h3>検索結果</h3>
+                  </div>
+
+                  <div className="search-stats">
+                    <span>検索結果: {searchResults.length}件</span>
+                    <span>安全: {searchResults.filter(r => r.toxicityLevel <= 0.2).length}件</span>
+                    <span>危険: {searchResults.filter(r => r.toxicityLevel > 0.2).length}件</span>
+                  </div>
+
+                  {searchResults.length > 0 ? (
                     <div className="search-results-table">
                       <div className="search-table-header">
                         <div className="search-table-cell header">キノコ名</div>
                         <div className="search-table-cell header">カテゴリ</div>
-                        <div className="search-table-cell header">毒性</div>
-                        <div className="search-table-cell header">季節</div>
+                        <div className="search-table-cell header">毒性レベル</div>
+                        <div className="search-table-cell header">採取季節</div>
                         <div className="search-table-cell header">採取制限</div>
                       </div>
-
-                      {h.map((mushroom, index) => (
-                        <div
-                          key={index}
-                          className={`search-table-row ${mushroom.toxicity >= 0.7 ? "dangerous" : "safe"}`}
-                          data-toxicity={
-                            mushroom.toxicity <= 0.2
-                              ? "safe"
-                              : mushroom.toxicity <= 0.5
-                                ? "mild"
-                                : mushroom.toxicity <= 0.7
-                                  ? "moderate"
-                                  : "high"
-                          }
-                        >
-                          <div className="search-table-cell name">
-                            {mushroom.name}
+                      {searchResults.map((result) => {
+                        const toxicityInfo = getToxicityLevelInfo(result.toxicityLevel);
+                        return (
+                          <div
+                            key={result.id}
+                            className={`search-table-row ${toxicityInfo.color}`}
+                            data-toxicity={toxicityInfo.color}
+                          >
+                            <div className="search-table-cell name">{result.name}</div>
+                            <div className="search-table-cell category">{result.category}</div>
+                            <div className="search-table-cell toxicity">{result.toxicityLevel.toFixed(1)}</div>
+                            <div className="search-table-cell season">{result.season}</div>
+                            <div className="search-table-cell limit">{result.limit}</div>
                           </div>
-                          <div className="search-table-cell category">
-                            {mushroom.category}
-                          </div>
-                          <div className="search-table-cell toxicity">
-                            {mushroom.toxicity}
-                          </div>
-                          <div className="search-table-cell season">
-                            {mushroom.season}
-                          </div>
-                          <div className="search-table-cell limit">
-                            {mushroom.limit === 0
-                              ? "採取禁止"
-                              : `${mushroom.limit}個`}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
-                  </div>
-                )}
-
-                {i && h.length === 0 && (
-                  <div className="no-results">
-                    <p>「{i}」に該当するキノコが見つかりませんでした。</p>
-                    <p>検索のヒント:</p>
-                    <ul>
-                      <li>
-                        キノコ名の一部を入力してみてください（例:
-                        "しい"で"しいたけ"を検索）
-                      </li>
-                      <li>季節で検索できます（春、夏、秋、冬、通年）</li>
-                      <li>毒性で検索できます（毒、危険、安全、食用）</li>
-                    </ul>
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* 図鑑タブの内容 */}
-            {databaseTab === "encyclopedia" && (
-              <>
-                {/* カテゴリ切り替えタブ */}
-                <div className="mushroom-category-tabs">
-                  <button
-                    className={`category-tab ${mushroomCategory === "main" ? "active" : ""}`}
-                    onClick={() => setMushroomCategory("main")}
-                  >
-                    主要 ({mushroomDatabase.length})
-                  </button>
-                  <button
-                    className={`category-tab ${mushroomCategory === "regional" ? "active" : ""}`}
-                    onClick={() => setMushroomCategory("regional")}
-                  >
-                    希少種 ({regionalMushrooms.length})
-                  </button>
-                  <button
-                    className={`category-tab ${mushroomCategory === "micro" ? "active" : ""}`}
-                    onClick={() => setMushroomCategory("micro")}
-                  >
-                    微小 ({microMushrooms.length})
-                  </button>
-                  <button
-                    className={`category-tab ${mushroomCategory === "specialized" ? "active" : ""}`}
-                    onClick={() => setMushroomCategory("specialized")}
-                  >
-                    専門 ({specializedMushrooms.length})
-                  </button>
-                  <button
-                    className={`category-tab ${mushroomCategory === "introduced" ? "active" : ""}`}
-                    onClick={() => setMushroomCategory("introduced")}
-                  >
-                    帰化 ({introducedMushrooms.length})
-                  </button>
-                </div>
-
-                {/* カテゴリ説明 */}
-                <div className="category-description">
-                  {mushroomCategory === "main" && (
-                    <p>
-                      一般的によく知られているキノコです。食用として親しまれているものが多く含まれています。
-                    </p>
-                  )}
-                  {mushroomCategory === "regional" && (
-                    <p>
-                      特定の地域や環境でのみ見つかる希少なキノコです。分布が限定的で貴重な種類です。
-                    </p>
-                  )}
-                  {mushroomCategory === "micro" && (
-                    <p>
-                      小さくて見つけにくいキノコや、専門的な知識が必要な微小種です。
-                    </p>
-                  )}
-                  {mushroomCategory === "specialized" && (
-                    <p>
-                      学術的分類や未同定種など、専門的な研究対象となるキノコです。
-                    </p>
-                  )}
-                  {mushroomCategory === "introduced" && (
-                    <p>海外から持ち込まれた外来種や栽培品種のキノコです。</p>
+                  ) : (
+                    <div className="no-results">
+                      <p>「{searchQuery}」に一致するキノコが見つかりませんでした。</p>
+                      <ul>
+                        <li>キーワードを変更してみてください</li>
+                        <li>部分的な名前でも検索できます</li>
+                        <li>ひらがな・カタカナ・漢字で試してみてください</li>
+                      </ul>
+                    </div>
                   )}
                 </div>
+              )}
+            </div>
+          )}
 
-                <div
-                  style={{
-                    marginBottom: "var(--spacing)",
-                    padding: "var(--spacing)",
-                    background: "var(--surface-elevated)",
-                    borderRadius: "var(--border-radius)",
-                    fontSize: "14px",
-                  }}
-                >
-                  <h4
-                    style={{
-                      margin: "0 0 12px 0",
-                      color: "var(--primary-color)",
-                    }}
-                  >
-                    毒性レベル分類
-                  </h4>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "6px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        padding: "6px 12px",
-                        background: "#d4edda",
-                        borderRadius: "4px",
-                        color: "#155724",
-                        fontSize: "13px",
-                        width: "50%",
-                      }}
-                    >
-                      <strong>0.0-0.2:</strong> 安全（食用可能）
-                    </div>
-                    <div
-                      style={{
-                        padding: "6px 12px",
-                        background: "#fff3cd",
-                        borderRadius: "4px",
-                        color: "#856404",
-                        fontSize: "13px",
-                        width: "50%",
-                      }}
-                    >
-                      <strong>0.3-0.5:</strong> 軽微な毒性（注意が必要）
-                    </div>
-                    <div
-                      style={{
-                        padding: "6px 12px",
-                        background: "#f8d7da",
-                        borderRadius: "4px",
-                        color: "#721c24",
-                        fontSize: "13px",
-                        width: "50%",
-                      }}
-                    >
-                      <strong>0.6-0.7:</strong> 中程度の毒性（摂取注意）
-                    </div>
-                    <div
-                      style={{
-                        padding: "6px 12px",
-                        background: "#f5c6cb",
-                        borderRadius: "4px",
-                        color: "#721c24",
-                        fontSize: "13px",
-                        width: "50%",
-                      }}
-                    >
-                      <strong>0.8-1.0:</strong> 高毒性・致命的（絶対に採取禁止）
-                    </div>
-                  </div>
-                  <p
-                    style={{
-                      margin: "12px 0 0 0",
-                      color: "var(--text-secondary)",
-                      fontSize: "12px",
-                    }}
-                  >
-                    ⚠️ 毒性レベル0.7以上のキノコは採取を避けてください
-                  </p>
-                </div>
+          {databaseTab === 'location' && (
+            <div>
+              <div className="form-group">
+                <label className="form-label">採取場所で検索</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={locationSearchQuery}
+                  onChange={(e) => handleLocationSearch(e.target.value)}
+                  placeholder="場所名を入力してください"
+                />
+              </div>
 
-                <div className="mushroom-table">
-                  <div className="mushroom-table-header">
-                    <div className="mushroom-table-cell header">キノコ名</div>
-                    <div className="mushroom-table-cell header">毒性</div>
-                    <div className="mushroom-table-cell header">季節</div>
-                    <div className="mushroom-table-cell header">採取制限</div>
+              {locationSearchQuery && (
+                <div className="search-results-container">
+                  <div className="search-results-header">
+                    <MapPin size={16} />
+                    <h3>場所検索結果</h3>
                   </div>
 
-                  {getCurrentMushroomData().map(
-                    (mushroom: MushroomData, index: number) => (
-                      <div
-                        key={index}
-                        className="mushroom-table-row"
-                        data-toxicity={
-                          mushroom.toxicity <= 0.2
-                            ? "safe"
-                            : mushroom.toxicity <= 0.5
-                              ? "mild"
-                              : mushroom.toxicity <= 0.7
-                                ? "moderate"
-                                : "high"
-                        }
-                      >
-                        <div className="mushroom-table-cell name">
-                          {mushroom.name}
-                        </div>
-                        <div className="mushroom-table-cell toxicity">
-                          {mushroom.toxicity}
-                        </div>
-                        <div className="mushroom-table-cell season">
-                          {mushroom.season}
-                        </div>
-                        <div className="mushroom-table-cell limit">
-                          {mushroom.limit}個
-                        </div>
+                  {locationSearchResults.length > 0 && (
+                    <div className="search-stats">
+                      <span>検索結果: {locationStatsMemo.total}件</span>
+                      <span>安全: {locationStatsMemo.safe}件</span>
+                      <span>危険: {locationStatsMemo.dangerous}件</span>
+                    </div>
+                  )}
+
+                  {locationSearchResults.length > 0 ? (
+                    <div className="search-results-table">
+                      <div className="search-table-header">
+                        <div className="search-table-cell header">キノコ名</div>
+                        <div className="search-table-cell header">採取場所</div>
+                        <div className="search-table-cell header">毒性レベル</div>
+                        <div className="search-table-cell header">採取日</div>
+                        <div className="search-table-cell header">採取個数</div>
                       </div>
-                    ),
+                      {locationSearchResults.map((result) => {
+                        const toxicityInfo = getToxicityLevelInfo(result.toxicityLevel);
+                        return (
+                          <div
+                            key={result.id}
+                            className={`search-table-row ${toxicityInfo.color}`}
+                            data-toxicity={toxicityInfo.color}
+                          >
+                            <div className="search-table-cell name">{result.name}</div>
+                            <div className="search-table-cell">{result.location}</div>
+                            <div className="search-table-cell toxicity">{result.toxicityLevel.toFixed(1)}</div>
+                            <div className="search-table-cell">{result.date}</div>
+                            <div className="search-table-cell">{result.count}個</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="no-results">
+                      <p>「{locationSearchQuery}」に一致する採取場所が見つかりませんでした。</p>
+                      <ul>
+                        <li>場所名を変更してみてください</li>
+                        <li>部分的な名前でも検索できます</li>
+                        <li>まず「記録登録」で採取記録を追加してください</li>
+                      </ul>
+                    </div>
                   )}
                 </div>
-              </>
-            )}
-          </div>
-        )}
-      </div>
-    </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
-
-export default HomePage;

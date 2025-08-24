@@ -1,5 +1,5 @@
 /* 30-50代向けシンプルモダンデザイン */
-@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
   --primary-color: #2d5016;
@@ -32,13 +32,8 @@
 }
 
 body {
-  font-family:
-    "Noto Sans JP",
-    "Inter",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  font-family: 'Noto Sans JP', 'Inter', -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
   background: var(--background);
   color: var(--text-primary);
   line-height: 1.6;
@@ -71,7 +66,7 @@ body {
 }
 
 .app-header::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
@@ -111,7 +106,7 @@ body {
 
 .nav-tab {
   flex: 1;
-  min-width: 120px;
+  min-width: 140px;
   padding: 12px 20px;
   background: none;
   border: none;
@@ -125,6 +120,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 
 .nav-tab.active {
@@ -541,7 +538,7 @@ body {
   padding: var(--spacing);
   margin-top: var(--spacing);
   white-space: pre-line;
-  font-family: "Inter", monospace;
+  font-family: 'Inter', monospace;
   font-size: 14px;
   line-height: 1.6;
   color: var(--text-secondary);
@@ -735,81 +732,81 @@ body {
 }
 
 /* 毒性レベル 0.0-0.2: 安全（緑） */
-.mushroom-table-row[data-toxicity="safe"] .mushroom-table-cell.toxicity {
+.mushroom-table-row[data-toxicity='safe'] .mushroom-table-cell.toxicity {
   color: #155724;
   font-weight: 700;
 }
 
-.mushroom-table-row[data-toxicity="safe"] {
+.mushroom-table-row[data-toxicity='safe'] {
   background-color: #d4edda;
   border: 1px solid #c3e6cb;
 }
 
 /* 毒性レベル 0.3-0.5: 軽微（オレンジ） */
-.mushroom-table-row[data-toxicity="mild"] .mushroom-table-cell.toxicity {
+.mushroom-table-row[data-toxicity='mild'] .mushroom-table-cell.toxicity {
   color: #856404;
   font-weight: 700;
 }
 
-.mushroom-table-row[data-toxicity="mild"] {
+.mushroom-table-row[data-toxicity='mild'] {
   background-color: #fff3cd;
   border: 1px solid #ffeaa7;
 }
 
 /* 毒性レベル 0.6-0.7: 中程度（赤） */
-.mushroom-table-row[data-toxicity="moderate"] .mushroom-table-cell.toxicity {
+.mushroom-table-row[data-toxicity='moderate'] .mushroom-table-cell.toxicity {
   color: #721c24;
   font-weight: 700;
 }
 
-.mushroom-table-row[data-toxicity="moderate"] {
+.mushroom-table-row[data-toxicity='moderate'] {
   background-color: #f8d7da;
   border: 1px solid #f5c6cb;
 }
 
 /* 毒性レベル 0.8-0.9: 高毒性（濃い赤） */
-.mushroom-table-row[data-toxicity="high"] .mushroom-table-cell.toxicity {
+.mushroom-table-row[data-toxicity='high'] .mushroom-table-cell.toxicity {
   color: #721c24;
   font-weight: 700;
 }
 
-.mushroom-table-row[data-toxicity="high"] {
+.mushroom-table-row[data-toxicity='high'] {
   background-color: #f5c6cb;
   border: 1px solid #f1aeb5;
 }
 
-.search-table-row[data-toxicity="safe"] .search-table-cell.toxicity {
+.search-table-row[data-toxicity='safe'] .search-table-cell.toxicity {
   color: #155724;
 }
 
-.search-table-row[data-toxicity="safe"] {
+.search-table-row[data-toxicity='safe'] {
   background-color: #d4edda;
   border: 1px solid #c3e6cb;
 }
 
-.search-table-row[data-toxicity="mild"] .search-table-cell.toxicity {
+.search-table-row[data-toxicity='mild'] .search-table-cell.toxicity {
   color: #856404;
 }
 
-.search-table-row[data-toxicity="mild"] {
+.search-table-row[data-toxicity='mild'] {
   background-color: #fff3cd;
   border: 1px solid #ffeaa7;
 }
 
-.search-table-row[data-toxicity="moderate"] .search-table-cell.toxicity {
+.search-table-row[data-toxicity='moderate'] .search-table-cell.toxicity {
   color: #721c24;
 }
 
-.search-table-row[data-toxicity="moderate"] {
+.search-table-row[data-toxicity='moderate'] {
   background-color: #f8d7da;
   border: 1px solid #f5c6cb;
 }
 
-.search-table-row[data-toxicity="high"] .search-table-cell.toxicity {
+.search-table-row[data-toxicity='high'] .search-table-cell.toxicity {
   color: #721c24;
 }
 
-.search-table-row[data-toxicity="high"] {
+.search-table-row[data-toxicity='high'] {
   background-color: #f5c6cb;
   border: 1px solid #f1aeb5;
 }
@@ -819,9 +816,27 @@ body {
   margin-bottom: var(--spacing-xl);
 }
 
+/* Leaflet マーカーのカスタマイズ */
+.leaflet-container {
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-light);
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-medium);
+}
+
+.leaflet-popup-content {
+  font-family: 'Noto Sans JP', 'Inter', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 .map-placeholder {
   background: var(--surface-elevated);
-  border: 2px dashed var(--border-color);
+  background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 50%, #a5d6a7 100%);
+  border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   padding: var(--spacing-xl);
   text-align: center;
@@ -830,6 +845,103 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.map-content {
+  width: 100%;
+  height: 300px;
+  background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 50%, #a5d6a7 100%);
+  border-radius: 8px;
+  position: relative;
+  margin-bottom: 16px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.map-pin {
+  position: absolute;
+  width: 30px;
+  height: 40px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.map-pin:hover {
+  transform: scale(1.1);
+  z-index: 20;
+}
+
+.map-pin-icon {
+  width: 30px;
+  height: 40px;
+  position: relative;
+}
+
+.map-pin-icon::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50% 50% 50% 0;
+  transform: translateX(-50%) rotate(-45deg);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.map-pin-icon::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 12px;
+  background: white;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.map-pin.safe .map-pin-icon::before {
+  background: #28a745;
+}
+
+.map-pin.dangerous .map-pin-icon::before {
+  background: #dc3545;
+}
+
+.map-pin-tooltip {
+  position: absolute;
+  bottom: 45px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 100;
+}
+
+.map-pin-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.8);
+}
+
+.map-pin:hover .map-pin-tooltip {
+  opacity: 1;
 }
 
 .map-legend {
@@ -866,6 +978,33 @@ body {
   margin-top: var(--spacing-xl);
 }
 
+.map-records-scroll {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--surface);
+  padding: var(--spacing);
+}
+
+.map-records-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.map-records-scroll::-webkit-scrollbar-track {
+  background: var(--surface-elevated);
+  border-radius: 4px;
+}
+
+.map-records-scroll::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+}
+
+.map-records-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark);
+}
+
 .map-record-item {
   background: var(--surface);
   border: 1px solid var(--border-color);
@@ -878,6 +1017,15 @@ body {
 .map-record-item:hover {
   box-shadow: var(--shadow-medium);
   transform: translateY(-1px);
+}
+
+.map-record-item {
+  transition: all 0.2s ease;
+}
+
+.map-record-item:hover {
+  background: var(--surface-elevated);
+  cursor: pointer;
 }
 
 .map-record-item.safe {
@@ -979,7 +1127,7 @@ body {
 }
 
 .coordinates {
-  font-family: "Inter", monospace;
+  font-family: 'Inter', monospace;
   color: var(--text-secondary);
   margin: 0 var(--spacing);
 }
@@ -1163,6 +1311,19 @@ body {
     flex-direction: row;
     flex-wrap: wrap;
     gap: var(--spacing);
+  }
+
+  .map-records-scroll {
+    max-height: 300px;
+  }
+
+  .map-records-scroll {
+    max-height: 300px;
+    padding: 12px;
+  }
+
+  .record-details-list {
+    max-height: 150px;
   }
 
   .map-legend {
