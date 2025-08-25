@@ -339,7 +339,7 @@ export default function MushroomTracker() {
           weight: 2,
           fillColor: hasDangerous ? '#dc3545' : '#28a745',
           fillOpacity: 1,
-          title: `${location} (${locationRecords.length}件)`
+          // title: `${location} (${locationRecords.length}件)`
         })
           .addTo(newMap)
           .bindPopup(`
