@@ -64,8 +64,49 @@ npm run lint      # 残りの問題をチェック
 
 ## 環境要件
 
-- Node.js 18.0.0 以上
+- Node.js 20.18.0 LTS（nodenvで管理）
 - npm 8.0.0 以上
+
+## nodenvセットアップ（初回のみ）
+
+### 1. nodenvのインストール
+```bash
+# Homebrewでnodenvをインストール
+brew install nodenv
+
+# node-buildもインストール（Node.js本体のビルドに必須）
+brew install node-build
+
+# シェル設定に追加（~/.zshrc または ~/.bash_profile）
+echo 'eval "$(nodenv init -)"' >> ~/.zshrc
+
+# 設定を反映
+source ~/.zshrc
+```
+
+### 2. Node.jsのインストール
+
+```bash
+# Node.js 20.18.0をインストール
+nodenv install 20.18.0
+nodenv rehash
+
+# インストール確認
+nodenv versions
+```
+
+### 3. プロジェクトでの使用
+```bash
+# プロジェクトディレクトリに移動
+cd mashroom-web
+
+# .node-version を作成（自動切り替え用）
+nodenv local 20.18.0
+
+# バージョン確認
+node --version  # v20.18.0
+npm --version   # npm 8以上（通常は10系）
+```
 
 ## 学習目的
 
