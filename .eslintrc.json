@@ -1,111 +1,78 @@
 {
-  // 共通の拡張設定
   "extends": [
-    "next/core-web-vitals", // Next.js 推奨ルール（Core Web Vitals対応）
-    "next/typescript", // TypeScript 用 Next.js 推奨ルール
-    "plugin:prettier/recommended" // Prettier と連携（コード整形は Prettier に任せる）
+    "next/core-web-vitals",
+    "next/typescript"
   ],
-
-  // 追加で使う ESLint プラグイン
-  "plugins": [
-    "import", // import順序チェック
-    "react", // React 用ルール
-    "@typescript-eslint" // TypeScript 用ルール
-  ],
-
-  // TypeScript のパーサ設定
-  "parserOptions": {
-    "project": ["./tsconfig.eslint.json"] // ESLint 専用の tsconfig を指定
-  },
-
-  // React のバージョンを自動検出
-  "settings": {
-    "react": { "version": "detect" }
-  },
-
-  // カスタムルール定義
   "rules": {
-    // ---- 基本のコード品質 ----
-    "no-unused-vars": "off", // JSのno-unused-varsはオフにしてTS版を使用
+    // TypeScript関連（基本的なJS rulesをオフにしてTS版を使用）
+    "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": [
-      "error",
-      { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" } // 未使用はエラー。ただし _始まりは無視
+      "error", 
+      { 
+        "argsIgnorePattern": "^_", 
+        "varsIgnorePattern": "^_",
+        "ignoreRestSiblings": true
+      }
     ],
-    "@typescript-eslint/no-explicit-any": "warn", // anyの使用を警告
-    "@typescript-eslint/prefer-nullish-coalescing": "error", // ?? の利用を推奨
-    "@typescript-eslint/prefer-optional-chain": "error", // optional chaining ?. 推奨
-    "prefer-const": "error", // 再代入しないなら const
-    "no-var": "error", // varは禁止
-    "no-console": ["warn", { "allow": ["warn", "error"] }], // console.logは禁止。warn/errorはOK
-    "eqeqeq": "error", // == ではなく === を強制
-    "curly": "error", // if/else には必ず {}
-
-    // ---- 可読性・フォーマット（Prettier任せ）----
-    "arrow-body-style": ["error", "as-needed"], // アロー関数は不要なら {} を省略
-    "camelcase": ["warn", { "properties": "never" }], // プロパティ名は無視（APIレスポンス対応）
-    "no-underscore-dangle": "off", // _始まりの変数名を許可（private用途など）
-
-    // ---- import 管理 ----
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/prefer-nullish-coalescing": "error",
+    "@typescript-eslint/prefer-optional-chain": "error",
+    "@typescript-eslint/consistent-type-imports": "error",
+    "@typescript-eslint/no-unnecessary-type-assertion": "error",
+    
+    // 基本的なコード品質
+    "prefer-const": "error",
+    "no-var": "error",
+    "no-console": "warn",
+    "eqeqeq": ["error", "always"],
+    "curly": "error",
+    
+    // React/Next.js関連
+    "react-hooks/exhaustive-deps": "warn",
+    "react/jsx-key": "error",
+    "react/no-unescaped-entities": "error",
+    "react/self-closing-comp": "error",
+    "react/jsx-boolean-value": ["error", "never"],
+    
+    // 複雑度制限（実務レベル）
+    "complexity": ["warn", 15],
+    "max-depth": ["warn", 5],
+    "max-lines-per-function": ["warn", 100],
+    "max-params": ["warn", 4],
+    
+    // 実務でよく使われる追加ルール
+    "no-debugger": "error",
+    "no-alert": "warn",
+    "no-duplicate-imports": "error",
+    "prefer-template": "error",
+    "object-shorthand": "error",
+    "no-return-await": "error",
+    "require-await": "error",
+    "no-unused-expressions": "error",
+    
+    // Import関連
     "import/order": [
       "error",
       {
         "groups": [
-          "builtin", // Node.js 組込み (fs, pathなど)
-          "external", // 外部ライブラリ (react, next など)
-          "internal", // プロジェクト内部エイリアス (@/components など)
-          "parent", // ../ 相対パス
-          "sibling", // ./ 相対パス
-          "index" // 同階層 index
+          "builtin",
+          "external", 
+          "internal",
+          "parent",
+          "sibling",
+          "index"
         ],
-        "newlines-between": "always", // グループ間に空行を入れる
-        "alphabetize": { "order": "asc", "caseInsensitive": true } // アルファベット順
+        "newlines-between": "always",
+        "alphabetize": {
+          "order": "asc",
+          "caseInsensitive": true
+        }
       }
-    ],
-    "sort-imports": [
-      "warn",
-      {
-        "ignoreCase": true, // 大文字小文字を区別しない
-        "ignoreDeclarationSort": true, // import全体の並び順は無視
-        "ignoreMemberSort": false // { A, B, C } の並びはアルファベット順
-      }
-    ],
-    "no-duplicate-imports": "error", // import重複は禁止
-
-    // ---- React/Next.js ----
-    "react-hooks/exhaustive-deps": "warn", // useEffect の依存配列をチェック
-    "react/jsx-key": "error", // JSXリストに key を必須
-    "react/no-unescaped-entities": "error", // JSX内で生の " ' を禁止（&quot;などに）
-    "react/self-closing-comp": "error", // 空タグは <Foo /> に
-    "react/jsx-curly-brace-presence": [
-      "error",
-      { "props": "never", "children": "never" } // { "text" } → "text" に
-    ],
-    "react/jsx-no-duplicate-props": "error", // JSX属性の重複禁止
-
-    // ---- TypeScript ----
-    "@typescript-eslint/explicit-function-return-type": "warn", // 関数戻り値型を推奨
-    "@typescript-eslint/consistent-type-imports": [
-      "error",
-      { "prefer": "type-imports" } // type Foo の import は import type を推奨
-    ],
-    "@typescript-eslint/consistent-type-definitions": ["error", "interface"], // 型定義はinterface推奨
-
-    // ---- 複雑度 ----
-    "complexity": ["warn", 15], // 関数の複雑度を制限（15以上は警告）
-    "max-depth": ["warn", 3], // ネストの深さは3まで
-    "max-lines-per-function": ["warn", 50], // 1関数50行まで
-
-    // ---- 実務ミス防止 ----
-    "no-debugger": "error", // debugger禁止
-    "no-alert": "warn", // alertは警告
-    "prefer-template": "error", // 文字連結はテンプレートリテラルで
-    "object-shorthand": "error" // { a: a } ではなく { a } に
+    ]
   },
-
-  // 実行環境
   "env": {
-    "browser": true, // window / document あり
-    "es2021": true, // ES2021 構文をサポート
-    "node": true // Node.js グローバル変数を使用可能
+    "browser": true,
+    "es2021": true,
+    "node": true
   }
 }
