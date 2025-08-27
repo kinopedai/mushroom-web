@@ -93,6 +93,28 @@ body {
   z-index: 1;
 }
 
+.logout-btn {
+  position: absolute;
+  top: var(--spacing);
+  right: var(--spacing);
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--border-radius);
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 2;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+}
+
 /* ナビゲーション */
 .nav-tabs {
   display: flex;
@@ -175,8 +197,8 @@ body {
 }
 
 .hamburger-button.menu-open {
-  opacity: 0.3;
-  transform: translateY(-1px) scale(0.9);
+  opacity: 0.3 !important;
+  transform: translateY(-1px) scale(0.9) !important;
 }
 
 .mobile-menu {
@@ -240,6 +262,16 @@ body {
   transform: translateX(0);
 }
 
+.mobile-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
 .mobile-nav-item {
   display: flex;
   align-items: center;
@@ -271,17 +303,6 @@ body {
 
 .mobile-nav-item.active:hover {
   background: var(--primary-dark);
-}
-
-.mobile-menu-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 999;
-  backdrop-filter: blur(2px);
 }
 
 /* カード */
@@ -353,6 +374,7 @@ body {
   font-family: inherit;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   text-decoration: none;
 }
@@ -987,6 +1009,11 @@ body {
   padding: var(--spacing);
 }
 
+.scrollable-record {
+  scroll-margin-top: 20px;
+  transition: all 0.2s ease;
+}
+
 .map-records-scroll::-webkit-scrollbar {
   width: 8px;
 }
@@ -1478,6 +1505,432 @@ body {
     max-width: 75px !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
+  }
+}
+
+/* ログインページ */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+}
+
+.login-card {
+  background: var(--surface);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-heavy);
+  width: 100%;
+  max-width: 480px;
+  border: 1px solid var(--border-color);
+}
+
+.logged-in-card {
+  max-width: 520px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.login-header .login-icon {
+  width: 48px;
+  height: 48px;
+  color: var(--primary-color);
+  margin-bottom: var(--spacing);
+}
+
+.login-header h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.login-header p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Google認証ボタン */
+.google-login-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.google-login-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: var(--surface);
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.google-login-btn:hover:not(:disabled) {
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(45, 80, 22, 0.1);
+  transform: translateY(-1px);
+}
+
+.google-login-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.google-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* ログイン区切り線 */
+.login-divider {
+  position: relative;
+  text-align: center;
+  margin: var(--spacing-lg) 0;
+}
+
+.login-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border-color);
+}
+
+.login-divider span {
+  background: var(--surface);
+  padding: 0 var(--spacing);
+  color: var(--text-muted);
+  font-size: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+/* メール認証セクション */
+.email-login-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.form-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--text-secondary);
+}
+
+.password-input-container {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.password-toggle:hover {
+  color: var(--text-primary);
+  background: var(--surface-elevated);
+}
+
+.login-submit-btn {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.forgot-password-link {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 8px 0;
+  font-family: inherit;
+  transition: color 0.2s ease;
+  width: 100%;
+  text-align: center;
+}
+
+.forgot-password-link:hover {
+  color: var(--primary-dark);
+}
+
+/* 新規登録セクション */
+.signup-section {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.signup-text {
+  margin: 0 0 var(--spacing) 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.signup-btn {
+  width: 100%;
+}
+
+/* ログインリンク */
+.login-links {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing);
+  border-top: 1px solid var(--border-color);
+}
+
+/* ログイン済み表示 */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing);
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-lg);
+  background: var(--surface-elevated);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+}
+
+.user-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 3px solid var(--primary-color);
+  object-fit: cover;
+}
+
+.user-details h2 {
+  margin: 0 0 4px 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.user-details p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.login-actions {
+  display: flex;
+  gap: var(--spacing);
+  flex-direction: column;
+}
+
+.login-footer {
+  text-align: center;
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+}
+
+.login-footer p {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.login-footer small {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+/* 戻るリンク */
+.back-to-login-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary-color);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 0;
+  transition: color 0.2s ease;
+  justify-content: center;
+}
+
+.back-to-login-link:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+
+/* リセットメール送信完了 */
+.reset-email-sent {
+  text-align: center;
+}
+
+.sent-email-info {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.sent-email-info p {
+  margin: 0 0 8px 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.sent-email-info p:last-child {
+  margin-bottom: 0;
+}
+
+.reset-instructions {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  text-align: left;
+}
+
+.reset-instructions h3 {
+  margin: 0 0 var(--spacing) 0;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.reset-instructions ol {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-secondary);
+}
+
+.reset-instructions li {
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+/* エラーメッセージ */
+.error-message {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  color: #721c24;
+}
+
+.error-message p {
+  margin: 0 0 var(--spacing) 0;
+  font-weight: 500;
+}
+
+.error-message ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.error-message li {
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+/* リセット完了メッセージ */
+.reset-complete-message {
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  color: #155724;
+  text-align: center;
+}
+
+.reset-complete-message p {
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+}
+
+.reset-complete-message p:last-child {
+  margin-bottom: 0;
+}
+
+/* ログインページのレスポンシブ */
+@media screen and (min-width: 769px) {
+  .login-card {
+    max-width: 600px;
+    padding: 40px;
+  }
+
+  .logged-in-card {
+    max-width: 640px;
+  }
+
+  .login-header h1 {
+    font-size: 2rem;
+  }
+
+  .login-header p {
+    font-size: 15px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .login-container {
+    padding: var(--spacing);
+  }
+
+  .login-card {
+    padding: var(--spacing-lg);
+    max-width: 100%;
+  }
+
+  .login-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .user-info {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .login-actions {
+    flex-direction: column;
+  }
+
+  .signup-btn,
+  .login-submit-btn {
+    font-size: 15px;
   }
 }
 
