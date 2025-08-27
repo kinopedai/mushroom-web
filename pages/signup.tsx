@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { UserPlus, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';

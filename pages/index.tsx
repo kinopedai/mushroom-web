@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Search, MapPin, Book, Plus, Menu, X, Navigation, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Search, MapPin, Book, Plus, Menu, X, Navigation, Trash2, Eye, EyeOff, LogOut } from 'lucide-react';
 import { useRouter } from 'next/router';
 import 'leaflet/dist/leaflet.css';
 
@@ -57,9 +57,25 @@ const databaseItems = [
 ];
 
 export default function MushroomTracker() {
+  const router = useRouter();
   // 大量のuseStateが連続定義（悪いパターン）
   const [activeTab, setActiveTab] = useState('record');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState(null);
   const [records, setRecords] = useState<MushroomRecord[]>([]);
+  
+  // ログアウト処理
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem('user');
+      localStorage.removeItem('loginTime');
+      setUser(null);
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   const [formData, setFormData] = useState({
     name: '',
     location: '',
@@ -77,7 +93,6 @@ export default function MushroomTracker() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [databaseTab, setDatabaseTab] = useState('mushroom');
   const [showCoordinates, setShowCoordinates] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [map, setMap] = useState<any>(null);
   const [markers, setMarkers] = useState<any[]>([]);
@@ -87,7 +102,6 @@ export default function MushroomTracker() {
   const [locationSelectionMap, setLocationSelectionMap] = useState<any>(null);
   const [expandedLocationId, setExpandedLocationId] = useState<string | null>(null);
   const [clickedLocationId, setClickedLocationId] = useState<string | null>(null);
-  const router = useRouter();
   const openLocationPicker = async () => {
     // Leaflet を未ロードならロード（効果側の初期化が動くようにだけ整える）
     if (!isMapLoaded) {
@@ -117,6 +131,16 @@ export default function MushroomTracker() {
 
   // 不適切なuseEffect（空の依存配列）
   useEffect(() => {
+    // ユーザーセッションチェック
+    try {
+      const savedUser = localStorage.getItem('user');
+      if (savedUser) {
+        setUser(JSON.parse(savedUser));
+      }
+    } catch (error) {
+      console.error('Failed to load user session:', error);
+    }
+
     const savedRecords = localStorage.getItem('mushroomRecords');
     if (savedRecords) {
       const parsedRecords = JSON.parse(savedRecords);
@@ -339,7 +363,7 @@ export default function MushroomTracker() {
           weight: 2,
           fillColor: hasDangerous ? '#dc3545' : '#28a745',
           fillOpacity: 1,
-          // title: `${location} (${locationRecords.length}件)`
+          title: `${location} (${locationRecords.length}件)`
         })
           .addTo(newMap)
           .bindPopup(`
@@ -409,7 +433,7 @@ export default function MushroomTracker() {
     // 記録登録タブの場合は必ずマップを閉じる
     if (tab === 'record') {
     }
-    setIsMobileMenuOpen(false);
+    // checkLoginStatus(); // 一時的にコメントアウト
   }, []);
 
   // 巨大なメソッド（100行以上）- バリデーション・毒性チェック・データ作成・保存・統計計算を1つの関数で処理
@@ -762,7 +786,7 @@ export default function MushroomTracker() {
       const totalCount = locationRecords.length;
       const latestDate = Math.max(...locationRecords.map(r => new Date(r.date).getTime()));
 
-    return {
+      return {
         location,
         records: locationRecords,
         isDangerous: hasDangerous,
@@ -780,8 +804,22 @@ export default function MushroomTracker() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1 className="app-title">🍄 キノコ狩り記録システム</h1>
-        <p className="app-subtitle">安全で楽しいキノコ狩りをサポート</p>
+        {/* ログアウトボタン - 右上固定 */}
+        <button 
+          className="logout-button-fixed"
+          onClick={handleLogout}
+          title="ログアウト"
+        >
+          <LogOut size={16} className="logout-icon" />
+          ログアウト
+        </button>
+
+        {user && (
+          <>
+            <h1 className="app-title">🍄 キノコ狩り記録システム</h1>
+            <p className="app-subtitle">安全で楽しいキノコ狩りをサポート</p>
+          </>
+        )}
       </header>
 
       {/* デスクトップナビゲーション */}
@@ -879,6 +917,19 @@ export default function MushroomTracker() {
                   <Search size={20} />
                   データベース検索
                 </button>
+                {user && (
+                  <button 
+                    className="mobile-nav-item"
+                    onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                      <polyline points="16,17 21,12 16,7"/>
+                      <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    ログアウト
+                  </button>
+                )}
               </div>
             </div>
           </>
@@ -969,16 +1020,16 @@ export default function MushroomTracker() {
                   {isGettingLocation ? '取得中...' : '現在地を取得'}
                 </button>
                 <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => {
-                      if (showLocationMap) {
-                        closeLocationPicker(); // 閉じる時
-                      } else {
-                        openLocationPicker(); // 開く時に初期化
-                      }
-                    }}
-                  >
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    if (showLocationMap) {
+                      closeLocationPicker(); // 閉じる時
+                    } else {
+                      openLocationPicker(); // 開く時に初期化
+                    }
+                  }}
+                >
                   <MapPin size={16} />
                   地図で選択
                 </button>

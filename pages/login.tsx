@@ -1,6 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { LogIn, User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/router';
+
+// Google Sign-In APIの型定義
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: any) => void;
+          prompt: () => void;
+        };
+      };
+    };
+  }
+}
 
 // 型定義
 interface UserData {
@@ -14,7 +28,7 @@ interface LoginState {
   isLoggedIn: boolean;
   user: UserData | null;
   loading: boolean;
-}　
+}
 
 // 定数
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
