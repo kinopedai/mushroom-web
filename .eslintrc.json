@@ -1,7 +1,6 @@
 {
   "extends": [
-    "next/core-web-vitals",
-    "next/typescript"
+    "next/core-web-vitals"
   ],
   "rules": {
     // TypeScript関連（基本的なJS rulesをオフにしてTS版を使用）
