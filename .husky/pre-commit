@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# このファイル(.lint-off)が存在したらlintをスキップ
+[ -f .lint-off ] && exit 0
+
+echo "→ lint-staged 実行中…"
+npx lint-staged
+
+echo "→ TypeScript 型チェック…"
+npm run typecheck
