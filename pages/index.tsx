@@ -16,18 +16,6 @@ interface MushroomRecord {
   timestamp: number;
 }
 
-interface RecordData {
-  id: string;
-  name: string;
-  location: string;
-  date: string;
-  count: number;
-  toxicityLevel: number;
-  memo: string;
-  coordinates?: { lat: number; lng: number };
-  timestamp: number;
-}
-
 interface DatabaseItem {
   id: string;
   name: string;
@@ -39,7 +27,7 @@ interface DatabaseItem {
 
 // 重複したデータ定義（悪いパターン）
 const mushroomDatabase = [
-  { id: '1', name: 'シイタケ', toxicityLevel: 0.0, season: '春-秋', limit: '制限なし', category: 'edible' },
+  { id: '1', name: 'シイタケa', toxicityLevel: 0.0, season: '春-秋', limit: '制限なし', category: 'edible' },
   { id: '2', name: 'マイタケ', toxicityLevel: 0.0, season: '秋', limit: '制限なし', category: 'edible' },
   { id: '3', name: 'エノキタケ', toxicityLevel: 0.0, season: '冬-春', limit: '制限なし', category: 'edible' },
   { id: '4', name: 'ベニテングタケ', toxicityLevel: 0.8, season: '夏-秋', limit: '採取禁止', category: 'poisonous' },
