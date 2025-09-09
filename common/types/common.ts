@@ -1,0 +1,12 @@
+//////////////////////////
+// type
+//////////////////////////
+export type Category = 'edible' | 'poisonous' | 'medicinal';
+
+//////////////////////////
+// interface
+//////////////////////////
+export interface Coordinates {
+  lat: number;
+  lng: number;
+}

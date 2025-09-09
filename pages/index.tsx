@@ -2,43 +2,10 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Search, MapPin, Book, Plus, Menu, X, Navigation, Trash2, Eye, EyeOff, LogOut } from 'lucide-react';
 import { useRouter } from 'next/router';
 import 'leaflet/dist/leaflet.css';
+import type { MushroomRecord } from '@/modules/record/domain/types';
+import type { MushroomRef } from '@/modules/encyclopedia/domain/types';
 
-// 重複した型定義（悪いパターン）
-interface MushroomRecord {
-  id: string;
-  name: string;
-  location: string;
-  date: string;
-  count: number;
-  toxicityLevel: number;
-  memo: string;
-  coordinates?: { lat: number; lng: number };
-  timestamp: number;
-}
-
-interface RecordData {
-  id: string;
-  name: string;
-  location: string;
-  date: string;
-  count: number;
-  toxicityLevel: number;
-  memo: string;
-  coordinates?: { lat: number; lng: number };
-  timestamp: number;
-}
-
-interface DatabaseItem {
-  id: string;
-  name: string;
-  toxicityLevel: number;
-  season: string;
-  limit: string;
-  category: string;
-}
-
-// 重複したデータ定義（悪いパターン）
-const mushroomDatabase = [
+const mushroomDatabase: MushroomRef[] = [
   { id: '1', name: 'シイタケ', toxicityLevel: 0.0, season: '春-秋', limit: '制限なし', category: 'edible' },
   { id: '2', name: 'マイタケ', toxicityLevel: 0.0, season: '秋', limit: '制限なし', category: 'edible' },
   { id: '3', name: 'エノキタケ', toxicityLevel: 0.0, season: '冬-春', limit: '制限なし', category: 'edible' },
@@ -47,7 +14,7 @@ const mushroomDatabase = [
   { id: '6', name: 'レイシ', toxicityLevel: 0.0, season: '夏-秋', limit: '適量', category: 'medicinal' }
 ];
 
-const databaseItems = [
+const databaseItems: MushroomRef[] = [
   { id: '1', name: 'シイタケ', toxicityLevel: 0.0, season: '春-秋', limit: '制限なし', category: 'edible' },
   { id: '2', name: 'マイタケ', toxicityLevel: 0.0, season: '秋', limit: '制限なし', category: 'edible' },
   { id: '3', name: 'エノキタケ', toxicityLevel: 0.0, season: '冬-春', limit: '制限なし', category: 'edible' },
@@ -87,7 +54,7 @@ export default function MushroomTracker() {
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<DatabaseItem[]>([]);
+  const [searchResults, setSearchResults] = useState<MushroomRef[]>([]);
   const [locationSearchQuery, setLocationSearchQuery] = useState('');
   const [locationSearchResults, setLocationSearchResults] = useState<MushroomRecord[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
